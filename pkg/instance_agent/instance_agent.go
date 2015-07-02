@@ -11,7 +11,7 @@ import (
 	"os/exec"
 	"time"
 
-	"testingframe/pkg/util"
+	"github.com/pingcap/dt/pkg/util"
 )
 
 const (
@@ -42,20 +42,22 @@ type Agent struct {
 	instanceState string
 }
 
-func NewInstanceAgent(path, addr string) (*Agent, error) {
-	if _, err := os.Stat(path); err != nil {
+func NewInstanceAgent(dataDir, ip, port, ctrlAddr string) (*Agent, error) {
+	if _, err := os.Stat(dataDir); err != nil {
 		return nil, err
 	}
 
-	f, err := os.Create(path)
+	f, err := os.Create(dataDir)
 	if err != nil {
 		return nil, err
 	}
 
 	return &Agent{
-		Addr:          addr,
+		Ip:            ip,
+		Addr:          ip + ":" + port,
+		CtrlAddr:      ctrlAddr,
 		instanceState: instanceStateUninitialized,
-		cmd:           exec.Command(path),
+		cmd:           exec.Command(dataDir),
 		logfile:       f}, nil
 }
 
@@ -77,7 +79,7 @@ func (a *Agent) Register() error {
 	return errors.New(string(data))
 }
 
-func (a *Agent) Start(cfg string) error {
+func (a *Agent) Start() error {
 	for {
 		if err := a.Register(); err == nil {
 			break
