@@ -5,7 +5,7 @@ import (
 	"io"
 	"net/http"
 
-	"testingframe/pkg/util"
+	"github.com/pingcap/dt/pkg/util"
 )
 
 func runHttpServer(a *Agent) error {
