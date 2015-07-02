@@ -41,9 +41,9 @@ type AgentCfg struct {
 
 type AgentAttr struct {
 	Ip       string
-	prot     string
-	ctrlAddr string
-	dataDir  string
+	Port     string
+	CtrlAddr string
+	DataDir  string
 }
 
 func GetCtrlCfg(file string) (cfg *TestCfg, err error) {
