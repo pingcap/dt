@@ -4,7 +4,7 @@ import (
 	"github.com/gorilla/mux"
 	"net/http"
 
-	"testingframe/pkg/util"
+	"github.com/pingcap/dt/pkg/util"
 )
 
 func runHttpServer(addr string, ctrl *Controller) {
