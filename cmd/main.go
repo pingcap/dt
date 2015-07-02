@@ -5,37 +5,42 @@ import (
 	"log"
 	"runtime"
 
-	ctrl "testingframe/pkg/controller"
-	agent "testingframe/pkg/instance_agent"
+	ctrl "github.com/pingcap/dt/pkg/controller"
+	agent "github.com/pingcap/dt/pkg/instance_agent"
+	"github.com/pingcap/dt/pkg/util"
 )
 
 var (
-	role = flag.String("role", "instance_agent", "start the specified process")
-	path = flag.String("path", "/tmp", "the path of data directory")
-	addr = flag.String("addr", "127.0.0.1:54321", "http listen address")
-	cfg  = flag.String("cfg", "cmd/cfg.toml", "configure file name")
+	role    = flag.String("role", "instance_agent", "start the specified process")
+	cfgPath = flag.String("cfg", "cmd/cfg.toml", "configure file name")
 )
-
-type Server interface {
-	Start(arg string) error
-}
 
 func main() {
 	flag.Parse()
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
-	var s Server
 	var err error
 
 	switch *role {
 	case "instanc_agent":
-		s, err = agent.NewInstanceAgent(*path, *addr)
+		cfg, err := util.GetAgentCfg(*cfgPath)
 		if err != nil {
 			log.Fatalln(err)
 		}
+		s, err := agent.NewInstanceAgent(cfg.Attr.DataDir, cfg.Attr.Ip, cfg.Attr.Port,
+			cfg.Attr.CtrlAddr)
+		if err == nil {
+			err = s.Start()
+		}
+
 	case "controller":
-		s = ctrl.NewController(*path, *addr)
+		cfg, err := util.GetCtrlCfg(*cfgPath)
+		if err != nil {
+			log.Fatalln(err)
+		}
+		s := ctrl.NewController(cfg.Attr.DataDir, cfg.Attr.Addr)
+		err = s.Start(cfg)
 	}
 
-	log.Fatalln(s.Start(*cfg))
+	log.Fatalln(err)
 }
