@@ -6,7 +6,7 @@ import (
 	"errors"
 	"net/http"
 
-	"testingframe/pkg/util"
+	"github.com/pingcap/dt/pkg/util"
 )
 
 var (
