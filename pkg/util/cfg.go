@@ -8,18 +8,21 @@ const (
 	CmdStartInstance = "start"
 )
 
+//controller config
 type TestCfg struct {
-	Titel        string
-	Attr         baseAttr
-	InstanceInfo map[string]instanceInfo
+	Title        string
+	Attr         *BaseAttr
+	InstanceInfo map[string]InstanceInfo
 	Cmds         []*TestCmd `toml: "testCmd"`
 }
 
-type baseAttr struct {
+type BaseAttr struct {
+	Addr          string
+	DataDir       string
 	InstanceCount int
 }
 
-type instanceInfo struct {
+type InstanceInfo struct {
 	Count int
 }
 
@@ -31,7 +34,25 @@ type TestCmd struct {
 	Instances []string
 }
 
-func GetCfg(file string) (cfg *TestCfg, err error) {
+//instance_agent config
+type AgentCfg struct {
+	Attr *AgentAttr
+}
+
+type AgentAttr struct {
+	Ip       string
+	prot     string
+	ctrlAddr string
+	dataDir  string
+}
+
+func GetCtrlCfg(file string) (cfg *TestCfg, err error) {
+	_, err = toml.DecodeFile(file, &cfg)
+
+	return
+}
+
+func GetAgentCfg(file string) (cfg *AgentCfg, err error) {
 	_, err = toml.DecodeFile(file, &cfg)
 
 	return
