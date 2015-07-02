@@ -4,8 +4,8 @@ import (
 	"errors"
 	"time"
 
-	client "testingframe/pkg/instance_agent/client"
-	"testingframe/pkg/util"
+	client "github.com/pingcap/dt/pkg/instance_agent/client"
+	"github.com/pingcap/dt/pkg/util"
 )
 
 const (
@@ -61,12 +61,7 @@ func getAgentInfos(count int, infoCh chan *AgentInfo) ([]*AgentInfo, error) {
 	return agentInfos, nil
 }
 
-func (ctrl *Controller) Init(cfgFile string) (err error) {
-	cfg, err := util.GetCfg(cfgFile)
-	if err != nil {
-		return
-	}
-
+func (ctrl *Controller) Init(cfg *util.TestCfg) (err error) {
 	instanceCount := 0
 	for _, inst := range cfg.InstanceInfo {
 		instanceCount += inst.Count
@@ -75,6 +70,7 @@ func (ctrl *Controller) Init(cfgFile string) (err error) {
 		return ErrCfgInfoUnmatch
 	}
 
+	ctrl.Addr = cfg.Attr.Addr
 	ctrl.cmds = cfg.Cmds
 	ctrl.agentCount = cfg.Attr.InstanceCount
 	ctrl.agents = make(map[string]*client.Agent, ctrl.agentCount)
@@ -83,7 +79,7 @@ func (ctrl *Controller) Init(cfgFile string) (err error) {
 	return
 }
 
-func (ctrl *Controller) Start(cfgFile string) error {
+func (ctrl *Controller) Start(cfgFile *util.TestCfg) error {
 	if err := ctrl.Init(cfgFile); err != nil {
 		return err
 	}
