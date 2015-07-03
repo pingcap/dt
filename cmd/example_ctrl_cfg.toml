@@ -1,0 +1,18 @@
+title = "example"
+
+[baseAttr]
+addr = "127.0.0.1:54321"
+datadir = "/tmp"
+instancecount = 1
+
+[instanceInfo]
+	[instanceInfo.server]
+	count=1
+
+[[testCmd]]
+cmd = "start"
+instances = ["server1"]
+dir = "/tmp"
+args = "./server"
+#probe function url
+probe = "http://127.0.0.1:8080/probefunc"
