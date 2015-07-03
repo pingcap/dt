@@ -2,6 +2,7 @@ package util
 
 import (
 	"github.com/BurntSushi/toml"
+	"github.com/ngaut/log"
 )
 
 const (
@@ -9,11 +10,11 @@ const (
 )
 
 //controller config
-type TestCfg struct {
-	Title        string
-	Attr         *BaseAttr
-	InstanceInfo map[string]InstanceInfo
-	Cmds         []*TestCmd `toml: "testCmd"`
+type CtrlCfg struct {
+	Title         string
+	Attr          BaseAttr                `toml:"baseAttr"`
+	InstanceInfos map[string]InstanceInfo `toml:"instanceInfo"`
+	Cmds          []TestCmd               `toml:"testCmd"`
 }
 
 type BaseAttr struct {
@@ -27,7 +28,7 @@ type InstanceInfo struct {
 }
 
 type TestCmd struct {
-	Name      string `toml: "cmd"`
+	Name      string `toml:"cmd"`
 	Dir       string
 	Args      string
 	Probe     string
@@ -36,7 +37,7 @@ type TestCmd struct {
 
 //instance_agent config
 type AgentCfg struct {
-	Attr *AgentAttr
+	Attr AgentAttr
 }
 
 type AgentAttr struct {
@@ -46,14 +47,18 @@ type AgentAttr struct {
 	DataDir  string
 }
 
-func GetCtrlCfg(file string) (cfg *TestCfg, err error) {
+func GetCtrlCfg(file string) (cfg *CtrlCfg, err error) {
+	log.Debug("start: getCtrlCfg")
 	_, err = toml.DecodeFile(file, &cfg)
+	log.Info(cfg)
 
 	return
 }
 
 func GetAgentCfg(file string) (cfg *AgentCfg, err error) {
+	log.Debug("start: getAgentCfg")
 	_, err = toml.DecodeFile(file, &cfg)
+	log.Info(cfg)
 
 	return
 }
