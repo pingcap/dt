@@ -1,16 +1,14 @@
 package instance_agent
 
 import (
-	"bytes"
-	"errors"
 	"fmt"
-	"io/ioutil"
 	"net"
-	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"time"
 
+	"github.com/ngaut/log"
 	"github.com/pingcap/dt/pkg/util"
 )
 
@@ -54,38 +52,30 @@ func NewInstanceAgent(dataDir, ip, port, ctrlAddr string) (*Agent, error) {
 
 	return &Agent{
 		Ip:            ip,
-		Addr:          ip + ":" + port,
+		Addr:          fmt.Sprintf("%s:%s", ip, port),
 		CtrlAddr:      ctrlAddr,
 		instanceState: instanceStateUninitialized,
 		cmd:           exec.Command(dataDir),
 		logfile:       f}, nil
 }
 
-//  TODO: report info to controller
 func (a *Agent) Register() error {
-	buff := bytes.NewBuffer([]byte(a.Ip))
-	resp, err := http.Post("http://"+a.CtrlAddr+util.UrlRegisterAgent, "application/json", buff)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
+	log.Debug("start: register")
+	agentAttr := make(url.Values)
+	agentAttr.Set("addr", a.Addr)
 
-	code := resp.StatusCode
-	data, _ := ioutil.ReadAll(resp.Body)
-	if code == 200 {
-		return nil
-	}
+	log.Info("addr:", a.Addr, " encode", agentAttr.Encode())
 
-	return errors.New(string(data))
+	return util.HttpCall(util.ApiUrl(a.CtrlAddr, util.ActionRegisterAgent, agentAttr.Encode()), "POST")
 }
 
 func (a *Agent) Start() error {
 	for {
-		if err := a.Register(); err == nil {
-			break
+		if err := a.Register(); err != nil {
+			log.Warning("register failed, err:", err)
+			time.Sleep(registerIntervalTime * time.Millisecond)
 		}
-		//  TODO: add log
-		time.Sleep(registerIntervalTime * time.Millisecond)
+		break
 	}
 
 	return runHttpServer(a)
@@ -100,6 +90,7 @@ func (a *Agent) execCmd(cmd *exec.Cmd, args ...string) error {
 }
 
 func (a *Agent) StartInstance(args ...string) error {
+	log.Debug("start: startInstance")
 	if err := a.execCmd(a.cmd, args...); err != nil {
 		return err
 	}
