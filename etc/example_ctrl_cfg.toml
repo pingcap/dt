@@ -1,15 +1,13 @@
 title = "example"
-
-[baseAttr]
 addr = "127.0.0.1:54321"
-datadir = "/tmp"
-instancecount = 1
+data_dir = "/tmp"
+instance_count = 1
 
-[instanceInfo]
-	[instanceInfo.server]
+[instance_info]
+	[instance_info.server]
 	count=1
 
-[[testCmd]]
+[[test_cmd]]
 cmd = "start"
 instances = ["server1"]
 dir = "/tmp"
