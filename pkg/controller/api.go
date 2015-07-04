@@ -7,16 +7,15 @@ import (
 	"net/http"
 
 	"github.com/ngaut/log"
-	"github.com/pingcap/dt/pkg/util"
 )
 
-var ErrRegisterArgsInvalid = errors.New("invalid register args")
+var ErrRegisterArgs = errors.New("invalid register args")
 
 func runHttpServer(addr string, ctrl *Controller) {
 	log.Debug("start: runHttpServer")
 	m := mux.NewRouter()
 
-	m.HandleFunc("/"+util.ActionRegisterAgent, ctrl.apiRegisterAgent).Methods("POST", "PUT")
+	m.HandleFunc("/api/agent/register", ctrl.apiRegisterAgent).Methods("POST", "PUT")
 
 	http.Handle("/", m)
 	http.ListenAndServe(addr, nil)
@@ -28,7 +27,7 @@ func (ctrl *Controller) apiRegisterAgent(w http.ResponseWriter, r *http.Request)
 
 	if agentAddr == "" {
 		w.WriteHeader(http.StatusInternalServerError)
-		io.WriteString(w, ErrRegisterArgsInvalid.Error())
+		io.WriteString(w, ErrRegisterArgs.Error())
 		return
 	}
 	log.Info("apiRegisterAgent, info:", agentAddr)
