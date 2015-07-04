@@ -27,7 +27,7 @@ func (a *Agent) StartInstance(args ...string) error {
 	attr.Set("addr", a.Addr)
 	attr.Set("dir", a.dir)
 
-	return util.HttpCall(util.ApiUrl(a.Addr, util.ActionStartInstance, attr.Encode()), "POST")
+	return util.HttpCall(util.ApiUrl(a.Addr, "api/instance/start", attr.Encode()), "POST", nil)
 }
 
 // TODO: implement
