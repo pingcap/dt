@@ -1,26 +1,27 @@
-package instance_agent
+package agent
 
 import (
 	"github.com/gorilla/mux"
 	"io"
 	"net/http"
 
-	"github.com/pingcap/dt/pkg/util"
+	"github.com/ngaut/log"
 )
 
 func runHttpServer(a *Agent) error {
+	log.Debug("start: runHttpServer")
 	m := mux.NewRouter()
 
-	m.HandleFunc("/"+util.ActionStartInstance, a.apiStartInstance).Methods("Post", "Put")
-	m.HandleFunc("/"+util.ActionRestartInstance, a.apiRestartInstance).Methods("Post", "Put")
-	m.HandleFunc("/"+util.ActionPauseInstance, a.apiPauseInstance).Methods("Post", "Put")
-	m.HandleFunc("/"+util.ActionContinueInstance, a.apiContinueInstance).Methods("Post", "Put")
-	m.HandleFunc("/"+util.ActionStopInstance, a.apiStopInstance).Methods("Post", "Put")
-	m.HandleFunc("/"+util.ActionDropPortInstance, a.apiDropPortInstance).Methods("Post", "Put")
-	m.HandleFunc("/"+util.ActionRecoverPortInstance, a.apiRecoverPortInstance).Methods("Post", "Put")
-	m.HandleFunc("/"+util.ActionBackupInstanceData, a.apiBackupInstanceData).Methods("Post", "Put")
-	m.HandleFunc("/"+util.ActionCleanUpInstanceData, a.apiCleanUpInstanceData).Methods("Post", "Put")
-	m.HandleFunc("/"+util.ActionShutdown, a.apiShutdown).Methods("Post", "Put")
+	m.HandleFunc("/api/instance/start", a.apiStartInstance).Methods("Post", "Put")
+	m.HandleFunc("/api/instance/restart", a.apiRestartInstance).Methods("Post", "Put")
+	m.HandleFunc("/api/instance/pause", a.apiPauseInstance).Methods("Post", "Put")
+	m.HandleFunc("/api/instance/continue", a.apiContinueInstance).Methods("Post", "Put")
+	m.HandleFunc("/api/instance/stop", a.apiStopInstance).Methods("Post", "Put")
+	m.HandleFunc("/api/instance/dropport", a.apiDropPortInstance).Methods("Post", "Put")
+	m.HandleFunc("/api/instance/recoverport", a.apiRecoverPortInstance).Methods("Post", "Put")
+	m.HandleFunc("/api/instance/backupdata", a.apiBackupInstanceData).Methods("Post", "Put")
+	m.HandleFunc("/api/instance/cleanupdata", a.apiCleanUpInstanceData).Methods("Post", "Put")
+	m.HandleFunc("/api/agent/shutdown", a.apiShutdown).Methods("Post", "Put")
 
 	http.Handle("/", m)
 
@@ -28,6 +29,7 @@ func runHttpServer(a *Agent) error {
 }
 
 func (a *Agent) apiStartInstance(w http.ResponseWriter, r *http.Request) {
+	log.Debug("start: apiStartInstance")
 	// TODO: args format
 	args := r.FormValue("args")
 
@@ -37,6 +39,7 @@ func (a *Agent) apiStartInstance(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusOK)
+	log.Info("end: apiStartInstance")
 
 	return
 }
