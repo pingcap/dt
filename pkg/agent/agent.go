@@ -1,4 +1,4 @@
-package instance_agent
+package agent
 
 import (
 	"fmt"
@@ -40,22 +40,22 @@ type Agent struct {
 	instanceState string
 }
 
-func NewInstanceAgent(dataDir, ip, port, ctrlAddr string) (*Agent, error) {
-	if _, err := os.Stat(dataDir); err != nil {
+func NewAgent(cfg *AgentCfg) (*Agent, error) {
+	if _, err := os.Stat(cfg.DataDir); err != nil {
 		return nil, err
 	}
 
-	f, err := os.Create(dataDir)
+	f, err := os.Create(cfg.DataDir)
 	if err != nil {
 		return nil, err
 	}
 
 	return &Agent{
-		Ip:            ip,
-		Addr:          fmt.Sprintf("%s:%s", ip, port),
-		CtrlAddr:      ctrlAddr,
+		Ip:            cfg.Ip,
+		Addr:          fmt.Sprintf("%s:%s", cfg.Ip, cfg.Port),
+		CtrlAddr:      cfg.CtrlAddr,
 		instanceState: instanceStateUninitialized,
-		cmd:           exec.Command(dataDir),
+		cmd:           exec.Command(cfg.DataDir),
 		logfile:       f}, nil
 }
 
@@ -64,9 +64,7 @@ func (a *Agent) Register() error {
 	agentAttr := make(url.Values)
 	agentAttr.Set("addr", a.Addr)
 
-	log.Info("addr:", a.Addr, " encode", agentAttr.Encode())
-
-	return util.HttpCall(util.ApiUrl(a.CtrlAddr, util.ActionRegisterAgent, agentAttr.Encode()), "POST")
+	return util.HttpCall(util.ApiUrl(a.CtrlAddr, "api/agent/register", agentAttr.Encode()), "POST", nil)
 }
 
 func (a *Agent) Start() error {
@@ -90,7 +88,7 @@ func (a *Agent) execCmd(cmd *exec.Cmd, args ...string) error {
 }
 
 func (a *Agent) StartInstance(args ...string) error {
-	log.Debug("start: startInstance")
+	log.Debug("start: startInstance, agent")
 	if err := a.execCmd(a.cmd, args...); err != nil {
 		return err
 	}
