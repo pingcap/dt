@@ -1,6 +1,8 @@
 package util
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -20,9 +22,17 @@ func ApiUrl(addr, action, query string) string {
 	}
 }
 
-func HttpCall(url, method string) error {
+func HttpCall(url, method string, data interface{}) error {
 	log.Debug("start: httpCall, url:", url, "method:", method)
-	req, err := http.NewRequest(method, url, nil)
+	rw := &bytes.Buffer{}
+	if data != nil {
+		buf, err := json.Marshal(data)
+		if err != nil {
+			return err
+		}
+		rw.Write(buf)
+	}
+	req, err := http.NewRequest(method, url, rw)
 	if err != nil {
 		return err
 	}
@@ -33,13 +43,12 @@ func HttpCall(url, method string) error {
 	}
 	defer resp.Body.Close()
 
-	code := resp.StatusCode
-	data, _ := ioutil.ReadAll(resp.Body)
-	if code == 200 {
+	msg, _ := ioutil.ReadAll(resp.Body)
+	if resp.StatusCode/100 == 2 {
 		return nil
 	}
 
-	return errors.New(string(data))
+	return errors.New(fmt.Sprintf("error code: %s, msg: %s", resp.StatusCode, string(msg)))
 }
 
 func GetIpAndPort(addr string) (string, string, error) {
