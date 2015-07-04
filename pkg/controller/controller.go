@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/ngaut/log"
-	client "github.com/pingcap/dt/pkg/instance_agent/client"
+	"github.com/pingcap/dt/pkg/agent/client"
 	"github.com/pingcap/dt/pkg/util"
 )
 
@@ -27,15 +27,37 @@ type Controller struct {
 
 	agentCount  int
 	agents      map[string]*client.Agent
-	cmds        []util.TestCmd
+	cmds        []TestCmd
 	agentInfoCh chan string
 }
 
-func NewController(dataDir, addr string) *Controller {
-	return &Controller{
-		Addr:        addr,
-		DataDir:     dataDir,
+func NewController(cfg *CtrlCfg) (*Controller, error) {
+	ctrl := &Controller{
+		Addr:        cfg.Addr,
+		DataDir:     cfg.DataDir,
 		agentInfoCh: make(chan string, agentInfoChanSize)}
+
+	instanceCount := 0
+	for _, inst := range cfg.InstanceInfos {
+		instanceCount += inst.Count
+	}
+	if cfg.InstanceCount != instanceCount {
+		return nil, ErrCfgInfoUnmatch
+	}
+
+	ctrl.Addr = cfg.Addr
+	ctrl.cmds = cfg.Cmds
+	ctrl.agentCount = cfg.InstanceCount
+	ctrl.agents = make(map[string]*client.Agent, ctrl.agentCount)
+	instanceCount = 1
+	for kind, inst := range cfg.InstanceInfos {
+		for i := 0; i < inst.Count; i++ {
+			ctrl.agents[kind+strconv.Itoa(instanceCount)] = &client.Agent{}
+			instanceCount++
+		}
+	}
+
+	return ctrl, nil
 }
 
 func (ctrl *Controller) getAgentAddrs() (err error) {
@@ -61,6 +83,7 @@ func (ctrl *Controller) getAgentAddrs() (err error) {
 	for _, agent := range ctrl.agents {
 		agent.Addr = agentAddrs[i]
 		if agent.Ip, _, err = util.GetIpAndPort(agentAddrs[i]); err != nil {
+
 			return
 		}
 		i++
@@ -69,36 +92,7 @@ func (ctrl *Controller) getAgentAddrs() (err error) {
 	return
 }
 
-func (ctrl *Controller) Init(cfg *util.CtrlCfg) (err error) {
-	log.Debug("start: init")
-	instanceCount := 0
-	for _, inst := range cfg.InstanceInfos {
-		instanceCount += inst.Count
-	}
-	if cfg.Attr.InstanceCount != instanceCount {
-		return ErrCfgInfoUnmatch
-	}
-
-	ctrl.Addr = cfg.Attr.Addr
-	ctrl.cmds = cfg.Cmds
-	ctrl.agentCount = cfg.Attr.InstanceCount
-	ctrl.agents = make(map[string]*client.Agent, ctrl.agentCount)
-	instanceCount = 1
-	for kind, inst := range cfg.InstanceInfos {
-		for i := 0; i < inst.Count; i++ {
-			ctrl.agents[kind+strconv.Itoa(instanceCount)] = &client.Agent{}
-			instanceCount++
-		}
-	}
-
-	return
-}
-
-func (ctrl *Controller) Start(cfgFile *util.CtrlCfg) error {
-	if err := ctrl.Init(cfgFile); err != nil {
-		return err
-	}
-
+func (ctrl *Controller) Start() error {
 	go runHttpServer(ctrl.Addr, ctrl)
 	if err := ctrl.getAgentAddrs(); err != nil {
 		return err
@@ -115,7 +109,7 @@ func (ctrl *Controller) Start(cfgFile *util.CtrlCfg) error {
 }
 
 // name, dir, args, probe, instances
-func (ctrl *Controller) HandleCmd(cmd util.TestCmd) error {
+func (ctrl *Controller) HandleCmd(cmd TestCmd) error {
 	log.Debug("start: handlecmd")
 	switch cmd.Name {
 	case util.TestCmdStart:
