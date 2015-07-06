@@ -24,7 +24,7 @@ type Agent struct {
 
 	l      net.Listener
 	inst   *Instance
-	exitCh chan string
+	exitCh chan error
 }
 
 func NewAgent(cfg *AgentConfig) (*Agent, error) {
@@ -42,7 +42,7 @@ func NewAgent(cfg *AgentConfig) (*Agent, error) {
 		Addr:     fmt.Sprintf("%s:%s", cfg.IP, cfg.Port),
 		CtrlAddr: cfg.CtrlAddr,
 		inst:     &Instance{state: instanceStateNone, logfile: f, cmd: exec.Command(cfg.DataDir)},
-		exitCh:   make(chan string, 1)}, nil
+		exitCh:   make(chan error, 1)}, nil
 }
 
 func (a *Agent) Register() error {
@@ -65,9 +65,9 @@ func (a *Agent) Start() error {
 	}
 
 	select {
-	case msg := <-a.exitCh:
-		if msg != "" {
-			return errors.New(msg)
+	case err := <-a.exitCh:
+		if err != nil {
+			return errors.Trace(err)
 		}
 	}
 

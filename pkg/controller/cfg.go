@@ -26,7 +26,7 @@ type TestCmd struct {
 	Instances []string
 }
 
-func LoadConfig(file string) (cfg *CtrlConfig, err error) {
+func LoadConfig(file string) (cfg *Config, err error) {
 	_, err = toml.DecodeFile(file, &cfg)
 
 	return

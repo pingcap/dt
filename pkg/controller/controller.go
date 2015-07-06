@@ -94,7 +94,7 @@ func (ctrl *Controller) getAgentAddrs() (err error) {
 }
 
 func (ctrl *Controller) Start() error {
-	go runHttpServer(ctrl.Addr, ctrl)
+	go runHTTPServer(ctrl.Addr, ctrl)
 	if err := ctrl.getAgentAddrs(); err != nil {
 		return errors.Trace(err)
 	}

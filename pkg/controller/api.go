@@ -11,8 +11,8 @@ import (
 
 var ErrRegisterArgs = errors.New("invalid register args")
 
-func runHttpServer(addr string, ctrl *Controller) {
-	log.Debug("start: runHttpServer")
+func runHTTPServer(addr string, ctrl *Controller) {
+	log.Debug("start: runHTTPServer")
 	m := mux.NewRouter()
 
 	m.HandleFunc("/api/agent/register", ctrl.apiRegisterAgent).Methods("POST", "PUT")
@@ -26,7 +26,7 @@ func (ctrl *Controller) apiRegisterAgent(w http.ResponseWriter, r *http.Request)
 	agentAddr := r.FormValue("addr")
 
 	if agentAddr == "" {
-		util.WriteHttpError(w, ErrRegisterArgs.Error())
+		util.WriteHTTPError(w, ErrRegisterArgs.Error())
 		return
 	}
 	log.Info("apiRegisterAgent, info:", agentAddr)

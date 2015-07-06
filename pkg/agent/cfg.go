@@ -12,7 +12,7 @@ type AgentConfig struct {
 	DataDir  string `toml:"data_dir"`
 }
 
-func LoadConfig(file string) (cfg *AgentConfig, err error) {
+func LoadConfig(file string) (cfg *Config, err error) {
 	_, err = toml.DecodeFile(file, &cfg)
 
 	return

@@ -64,7 +64,7 @@ func GetIpAndPort(addr string) (string, string, error) {
 	return strSlice[0], strSlice[1], nil
 }
 
-func WriteHttpError(w http.ResponseWriter, msg string) {
+func WriteHTTPError(w http.ResponseWriter, msg string) {
 	w.WriteHeader(http.StatusInternalServerError)
 	io.WriteString(w, msg)
 }

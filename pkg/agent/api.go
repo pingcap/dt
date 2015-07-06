@@ -9,8 +9,8 @@ import (
 	"github.com/pingcap/dt/pkg/util"
 )
 
-func runHttpServer(a *Agent) error {
-	log.Debug("start: runHttpServer")
+func runHTTPServer(a *Agent) error {
+	log.Debug("start: runHTTPServer")
 	m := mux.NewRouter()
 
 	m.HandleFunc("/api/instance/start", a.inst.apiStart).Methods("Post", "Put")
@@ -27,7 +27,7 @@ func runHttpServer(a *Agent) error {
 	http.Handle("/", m)
 	err := http.ListenAndServe(a.Addr, nil)
 	if err != nil {
-		a.exitCh <- err.Error()
+		a.exitCh <- err
 	}
 
 	return errors.Trace(err)
@@ -41,7 +41,7 @@ func (inst *Instance) apiStart(w http.ResponseWriter, r *http.Request) {
 	inst.dataDir = r.FormValue("dir")
 
 	if err := inst.Start(cmd); err != nil {
-		util.WriteHttpError(w, "start instance failed, err:"+err.Error())
+		util.WriteHTTPError(w, "start instance failed, err:"+err.Error())
 		return
 	}
 	// TODO: add probe
@@ -61,7 +61,7 @@ func (inst *Instance) apiRecoverPort(w http.ResponseWriter, r *http.Request) {}
 
 func (a *Agent) apiShutdown(w http.ResponseWriter, r *http.Request) {
 	if err := a.Shutdown(); err != nil {
-		util.WriteHttpError(w, "shutdown agent failed, err:"+err.Error())
+		util.WriteHTTPError(w, "shutdown agent failed, err:"+err.Error())
 	}
 
 	w.WriteHeader(http.StatusOK)
