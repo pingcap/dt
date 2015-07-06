@@ -3,14 +3,18 @@ addr = "127.0.0.1:54321"
 data_dir = "/tmp"
 instance_count = 1
 
-[instance_info]
-	[instance_info.server]
+[instance]
+	[instance.server]
 	count=1
 
 [[test_cmd]]
 cmd = "start"
 instances = ["server1"]
 dir = "/tmp"
-args = "./server"
+args = "nohup /Users/lixia/workspace/test &"
 #probe function url
 probe = "http://127.0.0.1:8080/probefunc"
+
+[[test_cmd]]
+cmd = "shutdown"
+instances = ["server1"]
