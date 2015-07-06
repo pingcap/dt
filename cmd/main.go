@@ -4,6 +4,7 @@ import (
 	"flag"
 	"runtime"
 
+	"github.com/juju/errors"
 	"github.com/ngaut/log"
 	"github.com/pingcap/dt/pkg/agent"
 	ctrl "github.com/pingcap/dt/pkg/controller"
@@ -11,7 +12,7 @@ import (
 
 var (
 	role    = flag.String("role", "agent", "start the specified process: controller, agent [default: agent]")
-	cfgPath = flag.String("cfg", "cmd/cfg.toml", "configure file name")
+	cfgPath = flag.String("cfg", "etc/cfg.toml", "configure file name")
 	level   = flag.String("loglevel", "debug", "set log level: info, warn, error, debug [default: debug]")
 )
 
@@ -29,21 +30,25 @@ func main() {
 
 	switch *role {
 	case "agent":
-		cfg, err := agent.GetCfg(*cfgPath)
+		cfg, err := agent.LoadConfig(*cfgPath)
+		log.Debug(cfg)
 		if err != nil {
-			log.Fatal(err)
+			log.Fatal(errors.ErrorStack(err))
 		}
 		s, err = agent.NewAgent(cfg)
 	case "controller":
-		cfg, err := ctrl.GetCfg(*cfgPath)
+		cfg, err := ctrl.LoadConfig(*cfgPath)
+		log.Debug(cfg)
 		if err != nil {
-			log.Fatal(err)
+			log.Fatal(errors.ErrorStack(err))
 		}
 		s, err = ctrl.NewController(cfg)
 	}
 
-	if err == nil {
-		err = s.Start()
+	if err != nil {
+		log.Fatal(errors.ErrorStack(err))
 	}
-	log.Fatal(err)
+	if err = s.Start(); err != nil {
+		log.Fatal(errors.ErrorStack(err))
+	}
 }

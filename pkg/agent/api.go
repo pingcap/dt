@@ -2,55 +2,67 @@ package agent
 
 import (
 	"github.com/gorilla/mux"
-	"io"
 	"net/http"
 
+	"github.com/juju/errors"
 	"github.com/ngaut/log"
+	"github.com/pingcap/dt/pkg/util"
 )
 
 func runHttpServer(a *Agent) error {
 	log.Debug("start: runHttpServer")
 	m := mux.NewRouter()
 
-	m.HandleFunc("/api/instance/start", a.apiStartInstance).Methods("Post", "Put")
-	m.HandleFunc("/api/instance/restart", a.apiRestartInstance).Methods("Post", "Put")
-	m.HandleFunc("/api/instance/pause", a.apiPauseInstance).Methods("Post", "Put")
-	m.HandleFunc("/api/instance/continue", a.apiContinueInstance).Methods("Post", "Put")
-	m.HandleFunc("/api/instance/stop", a.apiStopInstance).Methods("Post", "Put")
-	m.HandleFunc("/api/instance/dropport", a.apiDropPortInstance).Methods("Post", "Put")
-	m.HandleFunc("/api/instance/recoverport", a.apiRecoverPortInstance).Methods("Post", "Put")
-	m.HandleFunc("/api/instance/backupdata", a.apiBackupInstanceData).Methods("Post", "Put")
-	m.HandleFunc("/api/instance/cleanupdata", a.apiCleanUpInstanceData).Methods("Post", "Put")
+	m.HandleFunc("/api/instance/start", a.inst.apiStart).Methods("Post", "Put")
+	m.HandleFunc("/api/instance/restart", a.inst.apiRestart).Methods("Post", "Put")
+	m.HandleFunc("/api/instance/pause", a.inst.apiPause).Methods("Post", "Put")
+	m.HandleFunc("/api/instance/continue", a.inst.apiContinue).Methods("Post", "Put")
+	m.HandleFunc("/api/instance/stop", a.inst.apiStop).Methods("Post", "Put")
+	m.HandleFunc("/api/instance/dropport", a.inst.apiDropPort).Methods("Post", "Put")
+	m.HandleFunc("/api/instance/recoverport", a.inst.apiRecoverPort).Methods("Post", "Put")
+	m.HandleFunc("/api/instance/backupdata", a.inst.apiBackupData).Methods("Post", "Put")
+	m.HandleFunc("/api/instance/cleanupdata", a.inst.apiCleanUpData).Methods("Post", "Put")
 	m.HandleFunc("/api/agent/shutdown", a.apiShutdown).Methods("Post", "Put")
 
 	http.Handle("/", m)
+	err := http.ListenAndServe(a.Addr, nil)
+	if err != nil {
+		a.exitCh <- err.Error()
+	}
 
-	return http.ListenAndServe(a.Addr, nil)
+	return errors.Trace(err)
+
 }
 
-func (a *Agent) apiStartInstance(w http.ResponseWriter, r *http.Request) {
+func (inst *Instance) apiStart(w http.ResponseWriter, r *http.Request) {
 	log.Debug("start: apiStartInstance")
-	// TODO: args format
-	args := r.FormValue("args")
+	cmd := r.FormValue("cmd")
+	// probe := r.FormValue("probe")
+	inst.dataDir = r.FormValue("dir")
 
-	if err := a.StartInstance(args); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		io.WriteString(w, "start instance failed, err:"+err.Error())
+	if err := inst.Start(cmd); err != nil {
+		util.WriteHttpError(w, "start instance failed, err:"+err.Error())
 		return
 	}
-	w.WriteHeader(http.StatusOK)
-	log.Info("end: apiStartInstance")
+	// TODO: add probe
 
-	return
+	w.WriteHeader(http.StatusOK)
 }
 
 // TODO: implement
-func (a *Agent) apiRestartInstance(w http.ResponseWriter, r *http.Request)     {}
-func (a *Agent) apiStopInstance(w http.ResponseWriter, r *http.Request)        {}
-func (a *Agent) apiPauseInstance(w http.ResponseWriter, r *http.Request)       {}
-func (a *Agent) apiContinueInstance(w http.ResponseWriter, r *http.Request)    {}
-func (a *Agent) apiBackupInstanceData(w http.ResponseWriter, r *http.Request)  {}
-func (a *Agent) apiCleanUpInstanceData(w http.ResponseWriter, r *http.Request) {}
-func (a *Agent) apiShutdown(w http.ResponseWriter, r *http.Request)            {}
-func (a *Agent) apiDropPortInstance(w http.ResponseWriter, r *http.Request)    {}
-func (a *Agent) apiRecoverPortInstance(w http.ResponseWriter, r *http.Request) {}
+func (inst *Instance) apiRestart(w http.ResponseWriter, r *http.Request)     {}
+func (inst *Instance) apiStop(w http.ResponseWriter, r *http.Request)        {}
+func (inst *Instance) apiPause(w http.ResponseWriter, r *http.Request)       {}
+func (inst *Instance) apiContinue(w http.ResponseWriter, r *http.Request)    {}
+func (inst *Instance) apiBackupData(w http.ResponseWriter, r *http.Request)  {}
+func (inst *Instance) apiCleanUpData(w http.ResponseWriter, r *http.Request) {}
+func (inst *Instance) apiDropPort(w http.ResponseWriter, r *http.Request)    {}
+func (inst *Instance) apiRecoverPort(w http.ResponseWriter, r *http.Request) {}
+
+func (a *Agent) apiShutdown(w http.ResponseWriter, r *http.Request) {
+	if err := a.Shutdown(); err != nil {
+		util.WriteHttpError(w, "shutdown agent failed, err:"+err.Error())
+	}
+
+	w.WriteHeader(http.StatusOK)
+}

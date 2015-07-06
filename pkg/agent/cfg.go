@@ -2,21 +2,18 @@ package agent
 
 import (
 	"github.com/BurntSushi/toml"
-	"github.com/ngaut/log"
 )
 
 //agent config
-type AgentCfg struct {
-	Ip       string
+type AgentConfig struct {
+	IP       string
 	Port     string
 	CtrlAddr string `toml:"ctrl_addr"`
 	DataDir  string `toml:"data_dir"`
 }
 
-func GetCfg(file string) (cfg *AgentCfg, err error) {
-	log.Debug("start: getAgentCfg")
+func LoadConfig(file string) (cfg *AgentConfig, err error) {
 	_, err = toml.DecodeFile(file, &cfg)
-	log.Info(cfg)
 
 	return
 }

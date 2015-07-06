@@ -11,7 +11,7 @@ instance_count = 1
 cmd = "start"
 instances = ["server1"]
 dir = "/tmp"
-args = "nohup /Users/lixia/workspace/test &"
+args = "nohup ./test &"
 #probe function url
 probe = "http://127.0.0.1:8080/probefunc"
 

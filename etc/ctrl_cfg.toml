@@ -1,26 +1,34 @@
 title = "example"
+addr = "127.0.0.1:54321"
+data_dir = "/tmp"
+instance_count = 12
 
-[baseAttr]
-intanceCount = 13
-
-[instanceInfo]
-	[intance.server]
+[instance]
+	[instance.server]
 	count = 6
 	[instance.proxy]
 	count = 3
 	[instance.zk]
 	count=3
 
-[[testCmd]]
+[[test_cmd]]
 cmd = "start"
-instances = [server1, server2, server3, server4, server5, server6]
+instances = ["server1", "server2", "server3", "server4", "server5", "server6"]
 dir = "/tmp"
 args = "./server"
-probe = "probe function name"
+#probe function url
+probe = "http://127.0.0.1:8080/probefunc"
 
-[[testCmd]]
+[[test_cmd]]
 cmd = "start"
-instances = [proxy1, proxy2, proxy3]
+instances = ["proxy1", "proxy2", "proxy3"]
 dir = "/tmp"
 args = "./proxy"
-probe = "probe function name"
+probe = "http://127.0.0.1:9876/probefunc"
+
+[[test_cmd]]
+cmd ="start"
+instances = ["zk1", "zk2", "zk3"]
+dir = "/tmp"
+args = "./zkServer.sh start"
+probe = "http://127.0.0.1:9876/probeZkfunc"

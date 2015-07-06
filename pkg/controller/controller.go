@@ -1,10 +1,11 @@
 package controller
 
 import (
-	"errors"
 	"strconv"
+	"strings"
 	"time"
 
+	"github.com/juju/errors"
 	"github.com/ngaut/log"
 	"github.com/pingcap/dt/pkg/agent/client"
 	"github.com/pingcap/dt/pkg/util"
@@ -31,7 +32,7 @@ type Controller struct {
 	agentInfoCh chan string
 }
 
-func NewController(cfg *CtrlCfg) (*Controller, error) {
+func NewController(cfg *CtrlConfig) (*Controller, error) {
 	ctrl := &Controller{
 		Addr:        cfg.Addr,
 		DataDir:     cfg.DataDir,
@@ -42,7 +43,7 @@ func NewController(cfg *CtrlCfg) (*Controller, error) {
 		instanceCount += inst.Count
 	}
 	if cfg.InstanceCount != instanceCount {
-		return nil, ErrCfgInfoUnmatch
+		return nil, errors.Trace(ErrCfgInfoUnmatch)
 	}
 
 	ctrl.Addr = cfg.Addr
@@ -95,27 +96,29 @@ func (ctrl *Controller) getAgentAddrs() (err error) {
 func (ctrl *Controller) Start() error {
 	go runHttpServer(ctrl.Addr, ctrl)
 	if err := ctrl.getAgentAddrs(); err != nil {
-		return err
+		return errors.Trace(err)
 	}
 
 	log.Info(ctrl.cmds)
+	time.Sleep(2 * time.Second)
 	for _, cmd := range ctrl.cmds {
+		log.Info(cmd.Name)
 		if err := ctrl.HandleCmd(cmd); err != nil {
 			// TODO: deal with failure
+			return errors.Trace(err)
 		}
 	}
 
 	return nil
 }
 
-// name, dir, args, probe, instances
 func (ctrl *Controller) HandleCmd(cmd TestCmd) error {
 	log.Debug("start: handlecmd")
-	switch cmd.Name {
+	switch strings.ToLower(cmd.Name) {
 	case util.TestCmdStart:
 		for _, inst := range cmd.Instances {
 			if err := ctrl.agents[inst].StartInstance(cmd.Args, cmd.Probe); err != nil {
-				return err
+				return errors.Trace(err)
 			}
 		}
 	case util.TestCmdRestart:
@@ -136,8 +139,14 @@ func (ctrl *Controller) HandleCmd(cmd TestCmd) error {
 	case util.TestCmdRecoverPort:
 		// TODO: implement
 		panic("ExecCmd hasn't implemented")
+	case util.TestCmdShutdownAgent:
+		for _, inst := range cmd.Instances {
+			if err := ctrl.agents[inst].Shutdown(); err != nil {
+				return errors.Trace(err)
+			}
+		}
 	default:
-		return ErrTestCmdUnmatch
+		return errors.Trace(ErrTestCmdUnmatch)
 	}
 
 	return nil
