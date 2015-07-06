@@ -54,6 +54,7 @@ func (a *Agent) Register() error {
 }
 
 func (a *Agent) Start() error {
+	go runHttpServer(a)
 	for {
 		if err := a.Register(); err != nil {
 			log.Warning("register failed,errors.Trace(err):", errors.Trace(err))
@@ -62,8 +63,6 @@ func (a *Agent) Start() error {
 			break
 		}
 	}
-
-	go runHttpServer(a)
 
 	select {
 	case msg := <-a.exitCh:

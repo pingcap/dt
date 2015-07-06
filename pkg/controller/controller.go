@@ -99,8 +99,6 @@ func (ctrl *Controller) Start() error {
 		return errors.Trace(err)
 	}
 
-	log.Info(ctrl.cmds)
-	time.Sleep(2 * time.Second)
 	for _, cmd := range ctrl.cmds {
 		log.Info(cmd.Name)
 		if err := ctrl.HandleCmd(cmd); err != nil {
