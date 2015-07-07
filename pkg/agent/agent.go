@@ -47,7 +47,7 @@ func (a *Agent) Register() error {
 	agentAttr := make(url.Values)
 	agentAttr.Set("addr", a.Addr)
 
-	return util.HttpCall(util.ApiUrl(a.CtrlAddr, "api/agent/register", agentAttr.Encode()), "POST", nil)
+	return util.HTTPCall(util.ApiUrl(a.CtrlAddr, "api/agent/register", agentAttr.Encode()), "POST", nil)
 }
 
 func (a *Agent) Start() error {

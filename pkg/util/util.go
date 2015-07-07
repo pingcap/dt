@@ -23,7 +23,7 @@ func ApiUrl(addr, action, query string) string {
 	}
 }
 
-func HttpCall(url, method string, data interface{}) error {
+func HTTPCall(url, method string, data interface{}) error {
 	log.Debug("start: httpCall, url:", url, "method:", method)
 	rw := &bytes.Buffer{}
 	if data != nil {
