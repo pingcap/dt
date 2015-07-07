@@ -2,9 +2,10 @@ package controller
 
 import (
 	"errors"
-	"github.com/gorilla/mux"
+	"fmt"
 	"net/http"
 
+	"github.com/gorilla/mux"
 	"github.com/ngaut/log"
 	"github.com/pingcap/dt/pkg/util"
 )
@@ -22,11 +23,10 @@ func runHTTPServer(addr string, ctrl *Controller) {
 }
 
 func (ctrl *Controller) apiRegisterAgent(w http.ResponseWriter, r *http.Request) {
-	log.Debug("start: apiRegisterAgent")
 	agentAddr := r.FormValue("addr")
 
 	if agentAddr == "" {
-		util.WriteHTTPError(w, ErrRegisterArgs.Error())
+		util.WriteHTTPError(w, fmt.Sprintf("shutdown agent failed, err:%v", ErrRegisterArgs))
 		return
 	}
 	log.Info("apiRegisterAgent, info:", agentAddr)

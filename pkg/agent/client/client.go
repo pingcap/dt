@@ -1,9 +1,9 @@
 package client
 
 import (
-	"errors"
 	"net/url"
 
+	"github.com/juju/errors"
 	"github.com/pingcap/dt/pkg/util"
 )
 

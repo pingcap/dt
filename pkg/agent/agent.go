@@ -11,10 +11,6 @@ import (
 	"github.com/pingcap/dt/pkg/util"
 )
 
-const (
-	registerRetryTime = 1 //sec
-)
-
 type Agent struct {
 	IP       string
 	Addr     string
@@ -55,7 +51,7 @@ func (a *Agent) Start() error {
 	for {
 		if err := a.Register(); err != nil {
 			log.Warning("register failed,errors.Trace(err):", errors.Trace(err))
-			time.Sleep(registerRetryTime * time.Millisecond)
+			time.Sleep(1 * time.Millisecond)
 		} else {
 			break
 		}
