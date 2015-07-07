@@ -30,15 +30,64 @@ func (a *Agent) StartInstance(cmd, probe string) error {
 	return util.HttpCall(util.ApiUrl(a.Addr, "api/instance/start", attr.Encode()), "POST", nil)
 }
 
-// TODO: implement
-func (a *Agent) RestarInstance(args ...string) error      { return nil }
-func (a *Agent) PauseInstance() error                     { return nil }
-func (a *Agent) ConitnueInstace() error                   { return nil }
-func (a *Agent) BackupInstanceData(args ...string) error  { return nil }
-func (a *Agent) CleanUpInstanceData(args ...string) error { return nil }
-func (a *Agent) StopInstance() error                      { return nil }
-func (a *Agent) DropPortInstance(port string) error       { return nil }
-func (a *Agent) RecoverPortInstance(port string) error    { return nil }
+func (a *Agent) RestarInstance(cmd, probe string) error {
+	attr := make(url.Values)
+	attr.Set("cmd", cmd)
+	attr.Set("probe", probe)
+
+	return util.HttpCall(util.ApiUrl(a.Addr, "api/instance/restart", attr.Encode()), "POST", nil)
+}
+
+func (a *Agent) PauseInstance(probe string) error {
+	attr := make(url.Values)
+	attr.Set("probe", probe)
+
+	return util.HttpCall(util.ApiUrl(a.Addr, "api/instance/pause", attr.Encode()), "POST", nil)
+}
+
+func (a *Agent) ContinueInstance(probe string) error {
+	attr := make(url.Values)
+	attr.Set("probe", probe)
+
+	return util.HttpCall(util.ApiUrl(a.Addr, "api/instance/continue", attr.Encode()), "POST", nil)
+}
+
+func (a *Agent) BackupInstanceData(probe string) error {
+	attr := make(url.Values)
+	attr.Set("probe", probe)
+
+	return util.HttpCall(util.ApiUrl(a.Addr, "api/instance/backupdata", attr.Encode()), "POST", nil)
+}
+
+func (a *Agent) CleanUpInstanceData(probe string) error {
+	attr := make(url.Values)
+	attr.Set("probe", probe)
+
+	return util.HttpCall(util.ApiUrl(a.Addr, "api/instance/cleanupdata", attr.Encode()), "POST", nil)
+}
+
+func (a *Agent) StopInstance(probe string) error {
+	attr := make(url.Values)
+	attr.Set("probe", probe)
+
+	return util.HttpCall(util.ApiUrl(a.Addr, "api/instance/stop", attr.Encode()), "POST", nil)
+}
+
+func (a *Agent) DropPortInstance(port, probe string) error {
+	attr := make(url.Values)
+	attr.Set("port", port)
+	attr.Set("probe", probe)
+
+	return util.HttpCall(util.ApiUrl(a.Addr, "api/instance/dropport", attr.Encode()), "POST", nil)
+}
+
+func (a *Agent) RecoverPortInstance(port, probe string) error {
+	attr := make(url.Values)
+	attr.Set("port", port)
+	attr.Set("probe", probe)
+
+	return util.HttpCall(util.ApiUrl(a.Addr, "api/instance/recoverport", attr.Encode()), "POST", nil)
+}
 
 func (a *Agent) Shutdown() error {
 	return util.HttpCall(util.ApiUrl(a.Addr, "api/agent/shutdown", ""), "POST", nil)

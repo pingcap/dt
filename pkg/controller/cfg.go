@@ -5,8 +5,7 @@ import (
 )
 
 //controller config
-type CtrlConfig struct {
-	Title         string
+type Config struct {
 	Addr          string
 	DataDir       string                  `toml:"data_dir"`
 	InstanceCount int                     `toml:"instance_count"`

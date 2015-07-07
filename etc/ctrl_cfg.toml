@@ -1,4 +1,3 @@
-title = "example"
 addr = "127.0.0.1:54321"
 data_dir = "/tmp"
 instance_count = 12
@@ -17,18 +16,18 @@ instances = ["server1", "server2", "server3", "server4", "server5", "server6"]
 dir = "/tmp"
 args = "./server"
 #probe function url
-probe = "http://127.0.0.1:8080/probefunc"
+probe = "http://127.0.0.1:8080/probe/server/start"
 
 [[test_cmd]]
 cmd = "start"
 instances = ["proxy1", "proxy2", "proxy3"]
 dir = "/tmp"
 args = "./proxy"
-probe = "http://127.0.0.1:9876/probefunc"
+probe = "http://127.0.0.1:9876/probe/proxy/start"
 
 [[test_cmd]]
 cmd ="start"
 instances = ["zk1", "zk2", "zk3"]
 dir = "/tmp"
 args = "./zkServer.sh start"
-probe = "http://127.0.0.1:9876/probeZkfunc"
+probe = "http://127.0.0.1:9876/probe/zk/start"

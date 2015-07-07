@@ -5,7 +5,7 @@ import (
 )
 
 //agent config
-type AgentConfig struct {
+type Config struct {
 	IP       string
 	Port     string
 	CtrlAddr string `toml:"ctrl_addr"`

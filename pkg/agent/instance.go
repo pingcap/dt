@@ -30,12 +30,24 @@ type Instance struct {
 	cmd     *exec.Cmd
 }
 
+func NewInstance(f *os.File) *Instance {
+	return &Instance{state: instanceStateNone, logfile: f}
+}
+
 func (inst *Instance) execCmd(arg string) (*exec.Cmd, error) {
 	cmd := exec.Command("sh", "-c", arg)
 	cmd.Stdout = inst.logfile
 	cmd.Stderr = inst.logfile
 
-	return cmd, cmd.Run()
+	return cmd, cmd.Start()
+}
+
+// TODO: used for testing
+func ps() string {
+	cmd := exec.Command("sh", "-c", "ps -ejf|grep test")
+	output, _ := cmd.Output()
+
+	return string(output)
 }
 
 func (inst *Instance) Start(arg string) (err error) {
@@ -46,6 +58,8 @@ func (inst *Instance) Start(arg string) (err error) {
 
 	inst.state = instanceStateStarted
 	inst.pid = inst.cmd.Process.Pid
+
+	log.Warning("start out:", ps())
 
 	return
 }
@@ -64,15 +78,18 @@ func (inst *Instance) Pause() error {
 	}
 
 	arg := fmt.Sprintf(pauseInstanceCmd+" %d", inst.pid)
-	if _, err := inst.execCmd(arg); err != nil {
+	_, err := inst.execCmd(arg)
+	if err != nil {
 		return errors.Trace(err)
 	}
 	inst.state = instanceStatePaused
 
+	log.Warning("pause out:", ps())
+
 	return nil
 }
 
-func (inst *Instance) ContinuePause() error {
+func (inst *Instance) Continue() error {
 	if inst.state != instanceStatePaused {
 		return nil
 	}
@@ -83,8 +100,9 @@ func (inst *Instance) ContinuePause() error {
 	}
 	inst.state = instanceStateStarted
 
-	return nil
+	log.Warning("continue out:", ps())
 
+	return nil
 }
 
 func (inst *Instance) Stop() error {
@@ -100,18 +118,19 @@ func (inst *Instance) Stop() error {
 	}
 
 	inst.state = instanceStateStopped
+	log.Warning("stop out:", ps())
 
 	return nil
 }
 
-func (inst *Instance) BackupData(args ...string) error {
-	arg := fmt.Sprintf(backupInstanceDataCmd+" %s", inst.dataDir)
+func (inst *Instance) BackupData(path string) error {
+	arg := fmt.Sprintf(backupInstanceDataCmd+" %s %s", inst.dataDir, path)
 	_, err := inst.execCmd(arg)
 
 	return errors.Trace(err)
 }
 
-func (inst *Instance) CleanUpData(args ...string) error {
+func (inst *Instance) CleanUpData() error {
 	// TODO: clean up intance internal state
 	arg := fmt.Sprintf(cleanUpInstanceDataCmd+" %s", inst.dataDir)
 	_, err := inst.execCmd(arg)

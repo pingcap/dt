@@ -13,7 +13,7 @@ import (
 
 const (
 	agentInfoChanSize    = 20
-	agentRegisterTimeout = 60
+	agentRegisterTimeout = 300
 )
 
 var (
@@ -32,7 +32,7 @@ type Controller struct {
 	agentInfoCh chan string
 }
 
-func NewController(cfg *CtrlConfig) (*Controller, error) {
+func NewController(cfg *Config) (*Controller, error) {
 	ctrl := &Controller{
 		Addr:        cfg.Addr,
 		DataDir:     cfg.DataDir,
@@ -69,11 +69,11 @@ func (ctrl *Controller) getAgentAddrs() (err error) {
 
 	for {
 		select {
-		case info := <-ctrl.agentInfoCh:
-			agentAddrs[i] = info
+		case addr := <-ctrl.agentInfoCh:
+			agentAddrs[i] = addr
 			i++
 		case <-timeout:
-			return ErrAgentRegisterTimeout
+			return errors.Trace(ErrAgentRegisterTimeout)
 		}
 		if agentAddrs[ctrl.agentCount-1] != "" {
 			break
@@ -84,8 +84,7 @@ func (ctrl *Controller) getAgentAddrs() (err error) {
 	for _, agent := range ctrl.agents {
 		agent.Addr = agentAddrs[i]
 		if agent.Ip, _, err = util.GetIpAndPort(agentAddrs[i]); err != nil {
-
-			return
+			return errors.Trace(err)
 		}
 		i++
 	}
@@ -100,7 +99,6 @@ func (ctrl *Controller) Start() error {
 	}
 
 	for _, cmd := range ctrl.cmds {
-		log.Info(cmd.Name)
 		if err := ctrl.HandleCmd(cmd); err != nil {
 			// TODO: deal with failure
 			return errors.Trace(err)
@@ -111,7 +109,7 @@ func (ctrl *Controller) Start() error {
 }
 
 func (ctrl *Controller) HandleCmd(cmd TestCmd) error {
-	log.Debug("start: handlecmd")
+	log.Debug("start: handlecmd, cmd:", cmd.Name)
 	switch strings.ToLower(cmd.Name) {
 	case util.TestCmdStart:
 		for _, inst := range cmd.Instances {
@@ -120,23 +118,41 @@ func (ctrl *Controller) HandleCmd(cmd TestCmd) error {
 			}
 		}
 	case util.TestCmdRestart:
-		// TODO: implement
-		panic("ExecCmd hasn't implemented")
+		for _, inst := range cmd.Instances {
+			if err := ctrl.agents[inst].RestarInstance(cmd.Args, cmd.Probe); err != nil {
+				return errors.Trace(err)
+			}
+		}
 	case util.TestCmdPause:
-		// TODO: implement
-		panic("ExecCmd hasn't implemented")
+		for _, inst := range cmd.Instances {
+			if err := ctrl.agents[inst].PauseInstance(cmd.Probe); err != nil {
+				return errors.Trace(err)
+			}
+		}
 	case util.TestCmdContinue:
-		// TODO: implement
-		panic("ExecCmd hasn't implemented")
+		for _, inst := range cmd.Instances {
+			if err := ctrl.agents[inst].ContinueInstance(cmd.Probe); err != nil {
+				return errors.Trace(err)
+			}
+		}
 	case util.TestCmdStop:
-		// TODO: implement
-		panic("ExecCmd hasn't implemented")
+		for _, inst := range cmd.Instances {
+			if err := ctrl.agents[inst].StopInstance(cmd.Probe); err != nil {
+				return errors.Trace(err)
+			}
+		}
 	case util.TestCmdDropPort:
-		// TODO: implement
-		panic("ExecCmd hasn't implemented")
+		for _, inst := range cmd.Instances {
+			if err := ctrl.agents[inst].DropPortInstance(cmd.Args, cmd.Probe); err != nil {
+				return errors.Trace(err)
+			}
+		}
 	case util.TestCmdRecoverPort:
-		// TODO: implement
-		panic("ExecCmd hasn't implemented")
+		for _, inst := range cmd.Instances {
+			if err := ctrl.agents[inst].RecoverPortInstance(cmd.Args, cmd.Probe); err != nil {
+				return errors.Trace(err)
+			}
+		}
 	case util.TestCmdShutdownAgent:
 		for _, inst := range cmd.Instances {
 			if err := ctrl.agents[inst].Shutdown(); err != nil {

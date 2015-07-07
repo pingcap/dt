@@ -2,10 +2,8 @@ package agent
 
 import (
 	"fmt"
-	"net"
 	"net/url"
 	"os"
-	"os/exec"
 	"time"
 
 	"github.com/juju/errors"
@@ -14,7 +12,7 @@ import (
 )
 
 const (
-	registerIntervalTime = 1 //sec
+	registerRetryTime = 1 //sec
 )
 
 type Agent struct {
@@ -22,12 +20,11 @@ type Agent struct {
 	Addr     string
 	CtrlAddr string
 
-	l      net.Listener
 	inst   *Instance
 	exitCh chan error
 }
 
-func NewAgent(cfg *AgentConfig) (*Agent, error) {
+func NewAgent(cfg *Config) (*Agent, error) {
 	if err := os.MkdirAll(cfg.DataDir, 0755); err != nil {
 		return nil, errors.Trace(err)
 	}
@@ -41,7 +38,7 @@ func NewAgent(cfg *AgentConfig) (*Agent, error) {
 		IP:       cfg.IP,
 		Addr:     fmt.Sprintf("%s:%s", cfg.IP, cfg.Port),
 		CtrlAddr: cfg.CtrlAddr,
-		inst:     &Instance{state: instanceStateNone, logfile: f, cmd: exec.Command(cfg.DataDir)},
+		inst:     NewInstance(f),
 		exitCh:   make(chan error, 1)}, nil
 }
 
@@ -54,11 +51,11 @@ func (a *Agent) Register() error {
 }
 
 func (a *Agent) Start() error {
-	go runHttpServer(a)
+	go runHTTPServer(a)
 	for {
 		if err := a.Register(); err != nil {
 			log.Warning("register failed,errors.Trace(err):", errors.Trace(err))
-			time.Sleep(registerIntervalTime * time.Millisecond)
+			time.Sleep(registerRetryTime * time.Millisecond)
 		} else {
 			break
 		}
