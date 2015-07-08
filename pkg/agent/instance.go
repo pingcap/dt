@@ -7,6 +7,7 @@ import (
 
 	"github.com/juju/errors"
 	"github.com/ngaut/log"
+	"github.com/pingcap/dt/pkg/util"
 )
 
 const (
@@ -34,17 +35,17 @@ func NewInstance(f *os.File) *Instance {
 	return &Instance{state: instanceStateNone, logfile: f}
 }
 
-func (inst *Instance) execCmd(arg string) (*exec.Cmd, error) {
-	cmd := exec.Command("sh", "-c", arg)
-	cmd.Stdout = inst.logfile
-	cmd.Stderr = inst.logfile
+// TODO: used for checking results
+func ps() string {
+	cmd := exec.Command("sh", "-c", "ps -eux|grep test")
+	output, _ := cmd.Output()
 
-	return cmd, cmd.Start()
+	return string(output)
 }
 
-// TODO: used for testing
-func ps() string {
-	cmd := exec.Command("sh", "-c", "ps -ejf|grep test")
+// TODO: used for checking results
+func listIptables() string {
+	cmd := exec.Command("sh", "-c", "sudo iptables -L")
 	output, _ := cmd.Output()
 
 	return string(output)
@@ -52,7 +53,7 @@ func ps() string {
 
 func (inst *Instance) Start(arg string) (err error) {
 	log.Debug("start: startInstance, agent")
-	if inst.cmd, err = inst.execCmd(arg); err != nil {
+	if inst.cmd, err = util.ExecCmd(arg, inst.logfile); err != nil {
 		return
 	}
 
@@ -78,7 +79,7 @@ func (inst *Instance) Pause() error {
 	}
 
 	arg := fmt.Sprintf(pauseInstanceCmd+" %d", inst.pid)
-	_, err := inst.execCmd(arg)
+	_, err := util.ExecCmd(arg, inst.logfile)
 	if err != nil {
 		return errors.Trace(err)
 	}
@@ -95,7 +96,7 @@ func (inst *Instance) Continue() error {
 	}
 
 	arg := fmt.Sprintf(continueInstanceCmd+" %d", inst.pid)
-	if _, err := inst.execCmd(arg); err != nil {
+	if _, err := util.ExecCmd(arg, inst.logfile); err != nil {
 		return errors.Trace(err)
 	}
 	inst.state = instanceStateStarted
@@ -125,7 +126,7 @@ func (inst *Instance) Stop() error {
 
 func (inst *Instance) BackupData(path string) error {
 	arg := fmt.Sprintf(backupInstanceDataCmd+" %s %s", inst.dataDir, path)
-	_, err := inst.execCmd(arg)
+	_, err := util.ExecCmd(arg, inst.logfile)
 
 	return errors.Trace(err)
 }
@@ -133,16 +134,27 @@ func (inst *Instance) BackupData(path string) error {
 func (inst *Instance) CleanUpData() error {
 	// TODO: clean up intance internal state
 	arg := fmt.Sprintf(cleanUpInstanceDataCmd+" %s", inst.dataDir)
-	_, err := inst.execCmd(arg)
+	_, err := util.ExecCmd(arg, inst.logfile)
 
 	return errors.Trace(err)
 }
 
-//  TODO: ports may be more than one
 func (inst *Instance) DropPort(port string) error {
-	return DropPort(port)
+	if err := DropPort(port); err != nil {
+		return errors.Trace(err)
+	}
+
+	log.Warning("drop port out:", listIptables())
+
+	return nil
 }
 
 func (inst *Instance) RecoverPort(port string) error {
-	return RecoverPort(port)
+	if err := RecoverPort(port); err != nil {
+		return errors.Trace(err)
+	}
+
+	log.Warning("recover port out:", listIptables())
+
+	return nil
 }

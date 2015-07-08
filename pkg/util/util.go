@@ -7,6 +7,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"os/exec"
 	"strings"
 
 	"github.com/juju/errors"
@@ -77,4 +78,12 @@ func WriteHTTPResponse(w http.ResponseWriter, err error) {
 func WriteHTTPError(w http.ResponseWriter, msg string) {
 	w.WriteHeader(http.StatusInternalServerError)
 	io.WriteString(w, msg)
+}
+
+func ExecCmd(arg string, w io.Writer) (*exec.Cmd, error) {
+	cmd := exec.Command("sh", "-c", arg)
+	cmd.Stdout = w
+	cmd.Stderr = w
+
+	return cmd, cmd.Start()
 }

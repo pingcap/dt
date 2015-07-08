@@ -15,6 +15,18 @@ args = "./test"
 probe = "http://127.0.0.1:8080/probe/server/start"
 
 [[test_cmd]]
+cmd = "dropport"
+instances = ["server1"]
+args = "54300"
+probe = "http://127.0.0.1:8080/probe/server/dropport"
+
+[[test_cmd]]
+cmd = "recoverport"
+instances = ["server1"]
+args = "54300"
+probe = "http://127.0.0.1:8080/probe/server/recoverport"
+
+[[test_cmd]]
 cmd = "pause"
 instances = ["server1"]
 probe = "http://127.0.0.1:8080/probe/server/pause"

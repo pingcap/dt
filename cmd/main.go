@@ -12,7 +12,7 @@ import (
 
 var (
 	role    = flag.String("role", "agent", "start the specified process: controller, agent [default: agent]")
-	cfgPath = flag.String("cfg", "etc/cfg.toml", "configure file name")
+	cfgPath = flag.String("cfg", "etc/agent_cfg.toml", "configure file name")
 	level   = flag.String("loglevel", "debug", "set log level: info, warn, error, debug [default: debug]")
 )
 
