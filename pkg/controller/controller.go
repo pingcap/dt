@@ -113,13 +113,13 @@ func (ctrl *Controller) HandleCmd(cmd TestCmd) error {
 	switch strings.ToLower(cmd.Name) {
 	case util.TestCmdStart:
 		for _, inst := range cmd.Instances {
-			if err := ctrl.agents[inst].StartInstance(cmd.Args, cmd.Probe); err != nil {
+			if err := ctrl.agents[inst].StartInstance(cmd.Args, inst, cmd.Probe); err != nil {
 				return errors.Trace(err)
 			}
 		}
 	case util.TestCmdRestart:
 		for _, inst := range cmd.Instances {
-			if err := ctrl.agents[inst].RestarInstance(cmd.Args, cmd.Probe); err != nil {
+			if err := ctrl.agents[inst].RestartInstance(cmd.Args, inst, cmd.Probe); err != nil {
 				return errors.Trace(err)
 			}
 		}

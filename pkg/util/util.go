@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os/exec"
 	"strings"
+	"time"
 
 	"github.com/juju/errors"
 	"github.com/ngaut/log"
@@ -65,18 +66,11 @@ func GetIpAndPort(addr string) (string, string, error) {
 	return strSlice[0], strSlice[1], nil
 }
 
-func WriteHTTPResponse(w http.ResponseWriter, err error) {
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		io.WriteString(w, err.Error())
-		return
+func RespHTTPErr(w http.ResponseWriter, code int, msg string) {
+	w.WriteHeader(code)
+	if msg == "" {
+		msg = http.StatusText(code)
 	}
-
-	w.WriteHeader(http.StatusOK)
-}
-
-func WriteHTTPError(w http.ResponseWriter, msg string) {
-	w.WriteHeader(http.StatusInternalServerError)
 	io.WriteString(w, msg)
 }
 
@@ -86,4 +80,31 @@ func ExecCmd(arg string, w io.Writer) (*exec.Cmd, error) {
 	cmd.Stderr = w
 
 	return cmd, cmd.Start()
+}
+
+func GetGuId(key string) string {
+	t := time.Now().UnixNano()
+
+	return fmt.Sprintf("%d-%s", t, key)
+}
+
+func ReadFile(file string) ([]byte, error) {
+	b, err := ioutil.ReadFile(file)
+	if err != nil {
+		return nil, errors.Trace(err)
+	}
+
+	buf := bytes.Trim(b, "\n")
+
+	return buf, nil
+}
+
+func CheckIsEmpty(strs ...string) bool {
+	for _, s := range strs {
+		if s == "" {
+			return true
+		}
+	}
+
+	return false
 }

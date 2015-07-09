@@ -21,19 +21,21 @@ func NewAgent(dir, addr, ip string) (*Agent, error) {
 	return &Agent{dir: dir, Ip: ip, Addr: addr}, nil
 }
 
-func (a *Agent) StartInstance(cmd, probe string) error {
+func (a *Agent) StartInstance(cmd, instName, probe string) error {
 	attr := make(url.Values)
 	attr.Set("cmd", cmd)
 	attr.Set("probe", probe)
 	attr.Set("dir", a.dir)
+	attr.Set("name", instName)
 
 	return util.HTTPCall(util.ApiUrl(a.Addr, "api/instance/start", attr.Encode()), "POST", nil)
 }
 
-func (a *Agent) RestarInstance(cmd, probe string) error {
+func (a *Agent) RestartInstance(cmd, instName, probe string) error {
 	attr := make(url.Values)
 	attr.Set("cmd", cmd)
 	attr.Set("probe", probe)
+	attr.Set("name", instName)
 
 	return util.HTTPCall(util.ApiUrl(a.Addr, "api/instance/restart", attr.Encode()), "POST", nil)
 }

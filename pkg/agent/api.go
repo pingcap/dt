@@ -37,25 +37,33 @@ func runHTTPServer(a *Agent) error {
 }
 
 func (inst *Instance) apiStart(w http.ResponseWriter, r *http.Request) {
-	log.Debug("start: apiStartInstance")
 	cmd := r.FormValue("cmd")
-	// probe := r.FormValue("probe")
-	inst.dataDir = r.FormValue("dir")
+	name := r.FormValue("name")
+	if util.CheckIsEmpty(cmd, name) {
+		util.RespHTTPErr(w, http.StatusBadRequest, "")
+		return
+	}
 
-	if err := inst.Start(cmd); err != nil {
-		util.WriteHTTPError(w, fmt.Sprintf("start instance failed, err:%v", err))
+	if err := inst.Start(cmd, name); err != nil {
+		util.RespHTTPErr(w, http.StatusInternalServerError, fmt.Sprintf("start instance failed, err:%v", err))
 		return
 	}
 	// TODO: add probe
+	// probe := r.FormValue("probe")
 
 	w.WriteHeader(http.StatusOK)
 }
 
 func (inst *Instance) apiRestart(w http.ResponseWriter, r *http.Request) {
 	cmd := r.FormValue("cmd")
+	name := r.FormValue("name")
+	if util.CheckIsEmpty(cmd, name) {
+		util.RespHTTPErr(w, http.StatusBadRequest, "")
+		return
+	}
 
-	if err := inst.Restart(cmd); err != nil {
-		util.WriteHTTPError(w, fmt.Sprintf("restart instance, failed, err:%v", err))
+	if err := inst.Restart(cmd, name); err != nil {
+		util.RespHTTPErr(w, http.StatusInternalServerError, fmt.Sprintf("restart instance, failed, err:%v", err))
 		return
 	}
 
@@ -67,7 +75,7 @@ func (inst *Instance) apiRestart(w http.ResponseWriter, r *http.Request) {
 
 func (inst *Instance) apiPause(w http.ResponseWriter, r *http.Request) {
 	if err := inst.Pause(); err != nil {
-		util.WriteHTTPError(w, fmt.Sprintf("pause instance failed, err:%v", err))
+		util.RespHTTPErr(w, http.StatusInternalServerError, fmt.Sprintf("pause instance failed, err:%v", err))
 		return
 	}
 	// probe := r.FormValue("probe")
@@ -78,7 +86,7 @@ func (inst *Instance) apiPause(w http.ResponseWriter, r *http.Request) {
 
 func (inst *Instance) apiContinue(w http.ResponseWriter, r *http.Request) {
 	if err := inst.Continue(); err != nil {
-		util.WriteHTTPError(w, fmt.Sprintf("continue instance failed, err:%v", err))
+		util.RespHTTPErr(w, http.StatusInternalServerError, fmt.Sprintf("continue instance failed, err:%v", err))
 		return
 	}
 	// probe := r.FormValue("probe")
@@ -89,9 +97,13 @@ func (inst *Instance) apiContinue(w http.ResponseWriter, r *http.Request) {
 
 func (inst *Instance) apiBackupData(w http.ResponseWriter, r *http.Request) {
 	dstPath := r.FormValue("path")
+	if util.CheckIsEmpty(dstPath) {
+		util.RespHTTPErr(w, http.StatusBadRequest, "")
+		return
+	}
 
 	if err := inst.BackupData(dstPath); err != nil {
-		util.WriteHTTPError(w, fmt.Sprintf("backup instance data failed, err:%v", err))
+		util.RespHTTPErr(w, http.StatusInternalServerError, fmt.Sprintf("backup instance data failed, err:%v", err))
 		return
 	}
 	// probe := r.FormValue("probe")
@@ -102,7 +114,7 @@ func (inst *Instance) apiBackupData(w http.ResponseWriter, r *http.Request) {
 
 func (inst *Instance) apiCleanUpData(w http.ResponseWriter, r *http.Request) {
 	if err := inst.CleanUpData(); err != nil {
-		util.WriteHTTPError(w, fmt.Sprintf("clean up instance data failed, err:%v", err))
+		util.RespHTTPErr(w, http.StatusInternalServerError, fmt.Sprintf("clean up instance data failed, err:%v", err))
 		return
 	}
 	// probe := r.FormValue("probe")
@@ -113,7 +125,7 @@ func (inst *Instance) apiCleanUpData(w http.ResponseWriter, r *http.Request) {
 
 func (inst *Instance) apiStop(w http.ResponseWriter, r *http.Request) {
 	if err := inst.Stop(); err != nil {
-		util.WriteHTTPError(w, fmt.Sprintf("stop instance failed, err:%v", err))
+		util.RespHTTPErr(w, http.StatusInternalServerError, fmt.Sprintf("stop instance failed, err:%v", err))
 		return
 	}
 	// probe := r.FormValue("probe")
@@ -124,9 +136,13 @@ func (inst *Instance) apiStop(w http.ResponseWriter, r *http.Request) {
 
 func (inst *Instance) apiDropPort(w http.ResponseWriter, r *http.Request) {
 	port := r.FormValue("port")
+	if util.CheckIsEmpty(port) {
+		util.RespHTTPErr(w, http.StatusBadRequest, "")
+		return
+	}
 
 	if err := inst.DropPort(port); err != nil {
-		util.WriteHTTPError(w, fmt.Sprintf("drop instance port failed, err:%v", err))
+		util.RespHTTPErr(w, http.StatusInternalServerError, fmt.Sprintf("drop instance port failed, err:%v", err))
 		return
 	}
 	// probe := r.FormValue("probe")
@@ -137,9 +153,13 @@ func (inst *Instance) apiDropPort(w http.ResponseWriter, r *http.Request) {
 
 func (inst *Instance) apiRecoverPort(w http.ResponseWriter, r *http.Request) {
 	port := r.FormValue("port")
+	if util.CheckIsEmpty(port) {
+		util.RespHTTPErr(w, http.StatusBadRequest, "")
+		return
+	}
 
 	if err := inst.RecoverPort(port); err != nil {
-		util.WriteHTTPError(w, fmt.Sprintf("recover instance port failed, err:%v", err))
+		util.RespHTTPErr(w, http.StatusInternalServerError, fmt.Sprintf("recover instance port failed, err:%v", err))
 		return
 	}
 	// probe := r.FormValue("probe")
@@ -150,7 +170,7 @@ func (inst *Instance) apiRecoverPort(w http.ResponseWriter, r *http.Request) {
 
 func (a *Agent) apiShutdown(w http.ResponseWriter, r *http.Request) {
 	if err := a.Shutdown(); err != nil {
-		util.WriteHTTPError(w, fmt.Sprintf("shutdown agent failed, err:%v", err))
+		util.RespHTTPErr(w, http.StatusInternalServerError, fmt.Sprintf("shutdown agent failed, err:%v", err))
 		return
 	}
 

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strconv"
+	"strings"
 
 	"github.com/juju/errors"
 	"github.com/ngaut/log"
@@ -17,6 +19,7 @@ const (
 	instanceStatePaused   = "paused"
 	instanceStateContinue = "continue"
 
+	stopInstanceCmd        = "kill -KILL"
 	pauseInstanceCmd       = "kill -STOP"
 	continueInstanceCmd    = "kill -CONT"
 	backupInstanceDataCmd  = "cp -r"
@@ -37,40 +40,59 @@ func NewInstance(f *os.File) *Instance {
 
 // TODO: used for checking results
 func ps() string {
-	cmd := exec.Command("sh", "-c", "ps -eux|grep test")
+	cmd := exec.Command("sh", "-c", "ps -aux|grep test")
 	output, _ := cmd.Output()
 
 	return string(output)
 }
 
 // TODO: used for checking results
-func listIptables() string {
+func listIPTables() string {
 	cmd := exec.Command("sh", "-c", "sudo iptables -L")
 	output, _ := cmd.Output()
 
 	return string(output)
 }
 
-func (inst *Instance) Start(arg string) (err error) {
+func (inst *Instance) Start(arg, name string) (err error) {
 	log.Debug("start: startInstance, agent")
+	pidFile := util.GetGuId(name) + ".out"
+	isNohup := strings.Contains(arg, "nohup")
+
+	if isNohup {
+		arg += "echo $! > " + pidFile
+	}
 	if inst.cmd, err = util.ExecCmd(arg, inst.logfile); err != nil {
-		return
+		return errors.Trace(err)
 	}
 
-	inst.state = instanceStateStarted
-	inst.pid = inst.cmd.Process.Pid
-
 	log.Warning("start out:", ps())
+
+	inst.state = instanceStateStarted
+	if isNohup {
+		buf, err := util.ReadFile(pidFile)
+		if err == nil {
+			inst.pid, err = strconv.Atoi(string(buf))
+		}
+		if err != nil {
+			return errors.Trace(err)
+		}
+
+		log.Warning("nohup, pid:", inst.pid)
+		return err
+	}
+	inst.pid = inst.cmd.Process.Pid
+	log.Warning("pid:", inst.pid)
 
 	return
 }
 
-func (inst *Instance) Restart(arg string) error {
+func (inst *Instance) Restart(arg, name string) error {
 	if err := inst.Stop(); err != nil {
 		return errors.Trace(err)
 	}
 
-	return inst.Start(arg)
+	return inst.Start(arg, name)
 }
 
 func (inst *Instance) Pause() error {
@@ -79,8 +101,7 @@ func (inst *Instance) Pause() error {
 	}
 
 	arg := fmt.Sprintf(pauseInstanceCmd+" %d", inst.pid)
-	_, err := util.ExecCmd(arg, inst.logfile)
-	if err != nil {
+	if _, err := util.ExecCmd(arg, inst.logfile); err != nil {
 		return errors.Trace(err)
 	}
 	inst.state = instanceStatePaused
@@ -111,12 +132,12 @@ func (inst *Instance) Stop() error {
 		return nil
 	}
 
-	if err := inst.cmd.Process.Kill(); err != nil {
+	arg := fmt.Sprintf(stopInstanceCmd+" %d", inst.pid)
+	cmd, err := util.ExecCmd(arg, inst.logfile)
+	if err != nil {
 		return errors.Trace(err)
 	}
-	if _, err := inst.cmd.Process.Wait(); err != nil {
-		return errors.Trace(err)
-	}
+	cmd.Process.Wait()
 
 	inst.state = instanceStateStopped
 	log.Warning("stop out:", ps())
@@ -144,7 +165,7 @@ func (inst *Instance) DropPort(port string) error {
 		return errors.Trace(err)
 	}
 
-	log.Warning("drop port out:", listIptables())
+	log.Warning("drop port out:", listIPTables())
 
 	return nil
 }
@@ -154,7 +175,7 @@ func (inst *Instance) RecoverPort(port string) error {
 		return errors.Trace(err)
 	}
 
-	log.Warning("recover port out:", listIptables())
+	log.Warning("recover port out:", listIPTables())
 
 	return nil
 }

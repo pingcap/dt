@@ -10,7 +10,7 @@ instance_count = 1
 cmd = "start"
 instances = ["server1"]
 dir = "/tmp"
-args = "./test"
+args = "nohup ./test &"
 #probe function url
 probe = "http://127.0.0.1:8080/probe/server/start"
 
@@ -35,6 +35,12 @@ probe = "http://127.0.0.1:8080/probe/server/pause"
 cmd = "continue"
 instances = ["server1"]
 probe = "http://127.0.0.1:8080/probe/server/continue"
+
+[[test_cmd]]
+cmd = "restart"
+instances = ["server1"]
+args = "nohup ./test &"
+probe = "http://127.0.0.1:8080/probe/server/restart"
 
 [[test_cmd]]
 cmd = "stop"

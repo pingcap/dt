@@ -26,7 +26,8 @@ func (ctrl *Controller) apiRegisterAgent(w http.ResponseWriter, r *http.Request)
 	agentAddr := r.FormValue("addr")
 
 	if agentAddr == "" {
-		util.WriteHTTPError(w, fmt.Sprintf("shutdown agent failed, err:%v", ErrRegisterArgs))
+		util.RespHTTPErr(w, http.StatusInternalServerError,
+			fmt.Sprintf("shutdown agent failed, err:%v", ErrRegisterArgs))
 		return
 	}
 	log.Info("apiRegisterAgent, info:", agentAddr)
