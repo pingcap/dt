@@ -56,11 +56,11 @@ func listIPTables() string {
 
 func (inst *Instance) Start(arg, name string) (err error) {
 	log.Debug("start: startInstance, agent")
-	pidFile := util.GetGuId(name) + ".out"
+	pidFile := fmt.Sprintf("%s.out", util.GetGUID(name))
 	isNohup := strings.Contains(arg, "nohup")
 
 	if isNohup {
-		arg += "echo $! > " + pidFile
+		arg = fmt.Sprintf("%s echo $! > %s", arg, pidFile)
 	}
 	if inst.cmd, err = util.ExecCmd(arg, inst.logfile); err != nil {
 		return errors.Trace(err)
@@ -100,7 +100,7 @@ func (inst *Instance) Pause() error {
 		return nil
 	}
 
-	arg := fmt.Sprintf(pauseInstanceCmd+" %d", inst.pid)
+	arg := fmt.Sprintf("%s %d", pauseInstanceCmd, inst.pid)
 	if _, err := util.ExecCmd(arg, inst.logfile); err != nil {
 		return errors.Trace(err)
 	}
@@ -116,7 +116,7 @@ func (inst *Instance) Continue() error {
 		return nil
 	}
 
-	arg := fmt.Sprintf(continueInstanceCmd+" %d", inst.pid)
+	arg := fmt.Sprintf("%s %d", continueInstanceCmd, inst.pid)
 	if _, err := util.ExecCmd(arg, inst.logfile); err != nil {
 		return errors.Trace(err)
 	}
@@ -132,7 +132,7 @@ func (inst *Instance) Stop() error {
 		return nil
 	}
 
-	arg := fmt.Sprintf(stopInstanceCmd+" %d", inst.pid)
+	arg := fmt.Sprintf("%s %d", stopInstanceCmd, inst.pid)
 	cmd, err := util.ExecCmd(arg, inst.logfile)
 	if err != nil {
 		return errors.Trace(err)
@@ -146,7 +146,7 @@ func (inst *Instance) Stop() error {
 }
 
 func (inst *Instance) BackupData(path string) error {
-	arg := fmt.Sprintf(backupInstanceDataCmd+" %s %s", inst.dataDir, path)
+	arg := fmt.Sprintf("%s %s %s", backupInstanceDataCmd, inst.dataDir, path)
 	_, err := util.ExecCmd(arg, inst.logfile)
 
 	return errors.Trace(err)
@@ -154,7 +154,7 @@ func (inst *Instance) BackupData(path string) error {
 
 func (inst *Instance) CleanUpData() error {
 	// TODO: clean up intance internal state
-	arg := fmt.Sprintf(cleanUpInstanceDataCmd+" %s", inst.dataDir)
+	arg := fmt.Sprintf("%s %s", cleanUpInstanceDataCmd, inst.dataDir)
 	_, err := util.ExecCmd(arg, inst.logfile)
 
 	return errors.Trace(err)

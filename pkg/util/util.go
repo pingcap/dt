@@ -82,7 +82,7 @@ func ExecCmd(arg string, w io.Writer) (*exec.Cmd, error) {
 	return cmd, cmd.Start()
 }
 
-func GetGuId(key string) string {
+func GetGUID(key string) string {
 	t := time.Now().UnixNano()
 
 	return fmt.Sprintf("%d-%s", t, key)
