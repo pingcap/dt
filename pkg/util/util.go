@@ -8,14 +8,11 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os/exec"
-	"strings"
 	"time"
 
 	"github.com/juju/errors"
 	"github.com/ngaut/log"
 )
-
-var ErrAddrInvalid = errors.New("invalid addr")
 
 func ApiUrl(addr, action, query string) string {
 	if query != "" {
@@ -55,15 +52,6 @@ func HTTPCall(url, method string, data interface{}) error {
 	}
 
 	return nil
-}
-
-func GetIpAndPort(addr string) (string, string, error) {
-	strSlice := strings.Split(addr, ":")
-	if len(strSlice) != 2 {
-		return "", "", errors.Trace(ErrAddrInvalid)
-	}
-
-	return strSlice[0], strSlice[1], nil
 }
 
 func RespHTTPErr(w http.ResponseWriter, code int, msg string) {

@@ -40,7 +40,7 @@ func NewInstance(f *os.File) *Instance {
 
 // TODO: used for checking results
 func ps() string {
-	cmd := exec.Command("sh", "-c", "ps -aux|grep test")
+	cmd := exec.Command("sh", "-c", "ps -aux|grep cockroach")
 	output, _ := cmd.Output()
 
 	return string(output)
@@ -66,7 +66,7 @@ func (inst *Instance) Start(arg, name string) (err error) {
 		return errors.Trace(err)
 	}
 
-	log.Warning("start out:", ps())
+	log.Warning("start out:", ps(), "cmd:", arg)
 
 	inst.state = instanceStateStarted
 	if isNohup {
@@ -165,7 +165,7 @@ func (inst *Instance) DropPort(port string) error {
 		return errors.Trace(err)
 	}
 
-	log.Warning("drop port out:", listIPTables())
+	//log.Warning("drop port out:", listIPTables())
 
 	return nil
 }
@@ -175,7 +175,7 @@ func (inst *Instance) RecoverPort(port string) error {
 		return errors.Trace(err)
 	}
 
-	log.Warning("recover port out:", listIPTables())
+	//log.Warning("recover port out:", listIPTables())
 
 	return nil
 }

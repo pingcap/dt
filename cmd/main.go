@@ -38,7 +38,7 @@ func main() {
 		s, err = agent.NewAgent(cfg)
 	case "controller":
 		cfg, err := ctrl.LoadConfig(*cfgPath)
-		log.Debug(cfg)
+		log.Debug(cfg, *cfgPath)
 		if err != nil {
 			log.Fatal(errors.ErrorStack(err))
 		}

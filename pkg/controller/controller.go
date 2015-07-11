@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"net"
 	"strconv"
 	"strings"
 	"time"
@@ -83,7 +84,7 @@ func (ctrl *Controller) getAgentAddrs() (err error) {
 	i = 0
 	for _, agent := range ctrl.agents {
 		agent.Addr = agentAddrs[i]
-		if agent.Ip, _, err = util.GetIpAndPort(agentAddrs[i]); err != nil {
+		if agent.Ip, _, err = net.SplitHostPort(agentAddrs[i]); err != nil {
 			return errors.Trace(err)
 		}
 		i++
