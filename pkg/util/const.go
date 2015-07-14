@@ -9,5 +9,7 @@ const (
 	TestCmdStop          = "stop"
 	TestCmdDropPort      = "dropport"
 	TestCmdRecoverPort   = "recoverport"
+	TestCmdCleanUpData   = "cleanup"
+	TestCmdBackupData    = "backup"
 	TestCmdShutdownAgent = "shutdown"
 )

@@ -9,7 +9,7 @@ instance_count = 1
 [[test_cmd]]
 cmd = "start"
 instances = ["server1"]
-dir = "/tmp"
+dir = "/tmp/test"
 args = "nohup ./test &"
 #probe function url
 probe = "http://127.0.0.1:8080/probe/server/start"
@@ -39,8 +39,18 @@ probe = "http://127.0.0.1:8080/probe/server/continue"
 [[test_cmd]]
 cmd = "restart"
 instances = ["server1"]
+dir = "/tmp/test"
 args = "nohup ./test &"
 probe = "http://127.0.0.1:8080/probe/server/restart"
+
+[[test_cmd]]
+cmd = "backup"
+instances = ["server1"]
+dir = "/tmp/bak"
+
+[[test_cmd]]
+cmd = "cleanup"
+instances = ["server1"]
 
 [[test_cmd]]
 cmd = "stop"

@@ -96,3 +96,13 @@ func CheckIsEmpty(strs ...string) bool {
 
 	return false
 }
+
+func CheckIsExist(str string, strs []string) bool {
+	for _, s := range strs {
+		if s == str {
+			return true
+		}
+	}
+
+	return false
+}

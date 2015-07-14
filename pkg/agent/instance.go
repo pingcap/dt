@@ -147,17 +147,20 @@ func (inst *Instance) Stop() error {
 
 func (inst *Instance) BackupData(path string) error {
 	arg := fmt.Sprintf("%s %s %s", backupInstanceDataCmd, inst.dataDir, path)
-	_, err := util.ExecCmd(arg, inst.logfile)
+	if _, err := util.ExecCmd(arg, inst.logfile); err != nil {
+		return errors.Trace(err)
+	}
 
-	return errors.Trace(err)
+	return nil
 }
 
 func (inst *Instance) CleanUpData() error {
-	// TODO: clean up intance internal state
 	arg := fmt.Sprintf("%s %s", cleanUpInstanceDataCmd, inst.dataDir)
-	_, err := util.ExecCmd(arg, inst.logfile)
+	if _, err := util.ExecCmd(arg, inst.logfile); err != nil {
+		return errors.Trace(err)
+	}
 
-	return errors.Trace(err)
+	return nil
 }
 
 func (inst *Instance) DropPort(port string) error {

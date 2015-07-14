@@ -29,7 +29,7 @@ type Controller struct {
 
 	agentCount  int
 	agents      map[string]*client.Agent
-	cmds        []TestCmd
+	cmds        []*TestCmd
 	agentInfoCh chan string
 }
 
@@ -71,6 +71,9 @@ func (ctrl *Controller) getAgentAddrs() (err error) {
 	for {
 		select {
 		case addr := <-ctrl.agentInfoCh:
+			if util.CheckIsExist(addr, agentAddrs) {
+				break
+			}
 			agentAddrs[i] = addr
 			i++
 		case <-timeout:
@@ -100,8 +103,10 @@ func (ctrl *Controller) Start() error {
 	}
 
 	for _, cmd := range ctrl.cmds {
-		if err := ctrl.HandleCmd(cmd); err != nil {
-			// TODO: deal with failure
+		if err := ctrl.HandleCmd(cmd); err == nil {
+			continue
+		}
+		if err := ctrl.HandleFailure(); err != nil {
 			return errors.Trace(err)
 		}
 	}
@@ -109,18 +114,40 @@ func (ctrl *Controller) Start() error {
 	return nil
 }
 
-func (ctrl *Controller) HandleCmd(cmd TestCmd) error {
+func (ctrl *Controller) HandleFailure() error {
+	instances := make([]string, 0, len(ctrl.agents))
+	for name, _ := range ctrl.agents {
+		instances = append(instances, name)
+	}
+
+	cleanCmd := &TestCmd{Name: util.TestCmdCleanUpData, Instances: instances}
+	if err := ctrl.HandleCmd(cleanCmd); err != nil {
+		return errors.Trace(err)
+	}
+
+	// TODO: restart all instance
+	//	restartCmd := &TestCmd{Name: util.TestCmdRestart, Args, Probe, Instances: instances}
+	//	if err := ctrl.HandleCmd(restartCmd); err != nil {
+	//		return errors.Trace(err)
+	//	}
+
+	return nil
+}
+
+func (ctrl *Controller) HandleCmd(cmd *TestCmd) error {
 	log.Debug("start: handlecmd, cmd:", cmd.Name)
 	switch strings.ToLower(cmd.Name) {
 	case util.TestCmdStart:
 		for _, inst := range cmd.Instances {
-			if err := ctrl.agents[inst].StartInstance(cmd.Args, inst, cmd.Probe); err != nil {
+			err := ctrl.agents[inst].StartInstance(cmd.Args, inst, cmd.Dir, cmd.Probe)
+			if err != nil {
 				return errors.Trace(err)
 			}
 		}
 	case util.TestCmdRestart:
 		for _, inst := range cmd.Instances {
-			if err := ctrl.agents[inst].RestartInstance(cmd.Args, inst, cmd.Probe); err != nil {
+			err := ctrl.agents[inst].RestartInstance(cmd.Args, inst, cmd.Dir, cmd.Probe)
+			if err != nil {
 				return errors.Trace(err)
 			}
 		}
@@ -157,6 +184,19 @@ func (ctrl *Controller) HandleCmd(cmd TestCmd) error {
 	case util.TestCmdShutdownAgent:
 		for _, inst := range cmd.Instances {
 			if err := ctrl.agents[inst].Shutdown(); err != nil {
+				return errors.Trace(err)
+			}
+		}
+	case util.TestCmdBackupData:
+		for _, inst := range cmd.Instances {
+			log.Info("backup, dir:", cmd.Dir)
+			if err := ctrl.agents[inst].BackupInstanceData(cmd.Dir); err != nil {
+				return errors.Trace(err)
+			}
+		}
+	case util.TestCmdCleanUpData:
+		for _, inst := range cmd.Instances {
+			if err := ctrl.agents[inst].CleanUpInstanceData(); err != nil {
 				return errors.Trace(err)
 			}
 		}

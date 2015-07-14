@@ -38,24 +38,41 @@ func NewAgent(cfg *Config) (*Agent, error) {
 		exitCh:   make(chan error, 1)}, nil
 }
 
-func (a *Agent) Register() error {
-	log.Debug("start: register")
+func (a *Agent) hb() error {
 	agentAttr := make(url.Values)
 	agentAttr.Set("addr", a.Addr)
 
 	return util.HTTPCall(util.ApiUrl(a.CtrlAddr, "api/agent/register", agentAttr.Encode()), "POST", nil)
 }
 
-func (a *Agent) Start() error {
-	go runHTTPServer(a)
+func (a *Agent) Register() error {
+	log.Debug("start: register")
 	for {
-		if err := a.Register(); err != nil {
-			log.Warning("register failed,errors.Trace(err):", errors.Trace(err))
-			time.Sleep(1 * time.Millisecond)
+		if err := a.hb(); err != nil {
+			log.Warning("register failed, errors.Trace(err):", errors.Trace(err))
+			time.Sleep(1 * time.Second)
 		} else {
 			break
 		}
 	}
+
+	return nil
+}
+
+func (a *Agent) Hb() error {
+	log.Debug("start: hb")
+	for {
+		if err := a.hb(); err != nil {
+			log.Warning("hb failed, errors.Trace(err):", errors.Trace(err))
+		}
+		time.Sleep(3 * time.Second)
+	}
+}
+
+func (a *Agent) Start() error {
+	go runHTTPServer(a)
+	a.Register()
+	go a.Hb()
 
 	select {
 	case err := <-a.exitCh:

@@ -39,7 +39,8 @@ func runHTTPServer(a *Agent) error {
 func (inst *Instance) apiStart(w http.ResponseWriter, r *http.Request) {
 	cmd := r.FormValue("cmd")
 	name := r.FormValue("name")
-	if util.CheckIsEmpty(cmd, name) {
+	inst.dataDir = r.FormValue("dir")
+	if util.CheckIsEmpty(cmd, name, inst.dataDir) {
 		util.RespHTTPErr(w, http.StatusBadRequest, "")
 		return
 	}
@@ -57,7 +58,8 @@ func (inst *Instance) apiStart(w http.ResponseWriter, r *http.Request) {
 func (inst *Instance) apiRestart(w http.ResponseWriter, r *http.Request) {
 	cmd := r.FormValue("cmd")
 	name := r.FormValue("name")
-	if util.CheckIsEmpty(cmd, name) {
+	inst.dataDir = r.FormValue("dir")
+	if util.CheckIsEmpty(cmd, name, inst.dataDir) {
 		util.RespHTTPErr(w, http.StatusBadRequest, "")
 		return
 	}
@@ -96,7 +98,7 @@ func (inst *Instance) apiContinue(w http.ResponseWriter, r *http.Request) {
 }
 
 func (inst *Instance) apiBackupData(w http.ResponseWriter, r *http.Request) {
-	dstPath := r.FormValue("path")
+	dstPath := r.FormValue("dir")
 	if util.CheckIsEmpty(dstPath) {
 		util.RespHTTPErr(w, http.StatusBadRequest, "")
 		return
@@ -106,8 +108,6 @@ func (inst *Instance) apiBackupData(w http.ResponseWriter, r *http.Request) {
 		util.RespHTTPErr(w, http.StatusInternalServerError, fmt.Sprintf("backup instance data failed, err:%v", err))
 		return
 	}
-	// probe := r.FormValue("probe")
-	// TODO: add probe
 
 	w.WriteHeader(http.StatusOK)
 }
@@ -117,8 +117,6 @@ func (inst *Instance) apiCleanUpData(w http.ResponseWriter, r *http.Request) {
 		util.RespHTTPErr(w, http.StatusInternalServerError, fmt.Sprintf("clean up instance data failed, err:%v", err))
 		return
 	}
-	// probe := r.FormValue("probe")
-	// TODO: add probe
 
 	w.WriteHeader(http.StatusOK)
 }

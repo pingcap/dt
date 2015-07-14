@@ -12,28 +12,28 @@ var (
 )
 
 type Agent struct {
-	dir  string
 	Ip   string
 	Addr string
 }
 
 func NewAgent(dir, addr, ip string) (*Agent, error) {
-	return &Agent{dir: dir, Ip: ip, Addr: addr}, nil
+	return &Agent{Ip: ip, Addr: addr}, nil
 }
 
-func (a *Agent) StartInstance(cmd, instName, probe string) error {
+func (a *Agent) StartInstance(cmd, instName, dir, probe string) error {
 	attr := make(url.Values)
 	attr.Set("cmd", cmd)
+	attr.Set("dir", dir)
 	attr.Set("probe", probe)
-	attr.Set("dir", a.dir)
 	attr.Set("name", instName)
 
 	return util.HTTPCall(util.ApiUrl(a.Addr, "api/instance/start", attr.Encode()), "POST", nil)
 }
 
-func (a *Agent) RestartInstance(cmd, instName, probe string) error {
+func (a *Agent) RestartInstance(cmd, instName, dir, probe string) error {
 	attr := make(url.Values)
 	attr.Set("cmd", cmd)
+	attr.Set("dir", dir)
 	attr.Set("probe", probe)
 	attr.Set("name", instName)
 
@@ -54,18 +54,15 @@ func (a *Agent) ContinueInstance(probe string) error {
 	return util.HTTPCall(util.ApiUrl(a.Addr, "api/instance/continue", attr.Encode()), "POST", nil)
 }
 
-func (a *Agent) BackupInstanceData(probe string) error {
+func (a *Agent) BackupInstanceData(dir string) error {
 	attr := make(url.Values)
-	attr.Set("probe", probe)
+	attr.Set("dir", dir)
 
 	return util.HTTPCall(util.ApiUrl(a.Addr, "api/instance/backupdata", attr.Encode()), "POST", nil)
 }
 
-func (a *Agent) CleanUpInstanceData(probe string) error {
-	attr := make(url.Values)
-	attr.Set("probe", probe)
-
-	return util.HTTPCall(util.ApiUrl(a.Addr, "api/instance/cleanupdata", attr.Encode()), "POST", nil)
+func (a *Agent) CleanUpInstanceData() error {
+	return util.HTTPCall(util.ApiUrl(a.Addr, "api/instance/cleanupdata", ""), "POST", nil)
 }
 
 func (a *Agent) StopInstance(probe string) error {

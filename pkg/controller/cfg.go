@@ -7,10 +7,10 @@ import (
 //controller config
 type Config struct {
 	Addr          string
-	DataDir       string                  `toml:"data_dir"`
-	InstanceCount int                     `toml:"instance_count"`
-	InstanceInfos map[string]InstanceInfo `toml:"instance"`
-	Cmds          []TestCmd               `toml:"test_cmd"`
+	DataDir       string                   `toml:"data_dir"`
+	InstanceCount int                      `toml:"instance_count"`
+	InstanceInfos map[string]*InstanceInfo `toml:"instance"`
+	Cmds          []*TestCmd               `toml:"test_cmd"`
 }
 
 type InstanceInfo struct {
