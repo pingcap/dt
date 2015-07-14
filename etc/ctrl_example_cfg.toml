@@ -9,22 +9,22 @@ instance_count = 1
 [[test_cmd]]
 cmd = "start"
 instances = ["server1"]
-dir = "/tmp/test"
+dir = "/tmp/dt/test"
 args = "nohup ./test &"
 #probe function url
 probe = "http://127.0.0.1:8080/probe/server/start"
 
-[[test_cmd]]
-cmd = "dropport"
-instances = ["server1"]
-args = "54300"
-probe = "http://127.0.0.1:8080/probe/server/dropport"
-
-[[test_cmd]]
-cmd = "recoverport"
-instances = ["server1"]
-args = "54300"
-probe = "http://127.0.0.1:8080/probe/server/recoverport"
+#[[test_cmd]]
+#cmd = "dropport"
+#instances = ["server1"]
+#args = "54300"
+#probe = "http://127.0.0.1:8080/probe/server/dropport"
+#
+#[[test_cmd]]
+#cmd = "recoverport"
+#instances = ["server1"]
+#args = "54300"
+#probe = "http://127.0.0.1:8080/probe/server/recoverport"
 
 [[test_cmd]]
 cmd = "pause"
@@ -39,14 +39,14 @@ probe = "http://127.0.0.1:8080/probe/server/continue"
 [[test_cmd]]
 cmd = "restart"
 instances = ["server1"]
-dir = "/tmp/test"
+dir = "/tmp/dt/test"
 args = "nohup ./test &"
 probe = "http://127.0.0.1:8080/probe/server/restart"
 
 [[test_cmd]]
 cmd = "backup"
 instances = ["server1"]
-dir = "/tmp/bak"
+dir = "/tmp/dt/bak"
 
 [[test_cmd]]
 cmd = "cleanup"

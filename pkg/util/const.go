@@ -1,6 +1,6 @@
 package util
 
-// ctroller test cmd name
+// controller test cmd name
 const (
 	TestCmdStart         = "start"
 	TestCmdRestart       = "restart"

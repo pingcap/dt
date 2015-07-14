@@ -88,16 +88,10 @@ func ReadFile(file string) ([]byte, error) {
 }
 
 func CheckIsEmpty(strs ...string) bool {
-	for _, s := range strs {
-		if s == "" {
-			return true
-		}
-	}
-
-	return false
+	return Contains("", strs)
 }
 
-func CheckIsExist(str string, strs []string) bool {
+func Contains(str string, strs []string) bool {
 	for _, s := range strs {
 		if s == str {
 			return true

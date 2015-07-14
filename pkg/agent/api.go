@@ -3,6 +3,7 @@ package agent
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/juju/errors"
@@ -39,6 +40,7 @@ func runHTTPServer(a *Agent) error {
 func (inst *Instance) apiStart(w http.ResponseWriter, r *http.Request) {
 	cmd := r.FormValue("cmd")
 	name := r.FormValue("name")
+	probe := r.FormValue("probe")
 	inst.dataDir = r.FormValue("dir")
 	if util.CheckIsEmpty(cmd, name, inst.dataDir) {
 		util.RespHTTPErr(w, http.StatusBadRequest, "")
@@ -49,8 +51,11 @@ func (inst *Instance) apiStart(w http.ResponseWriter, r *http.Request) {
 		util.RespHTTPErr(w, http.StatusInternalServerError, fmt.Sprintf("start instance failed, err:%v", err))
 		return
 	}
-	// TODO: add probe
-	// probe := r.FormValue("probe")
+	time.Sleep(2 * time.Second)
+	if err := ProbeResult(probe); err != nil {
+		util.RespHTTPErr(w, http.StatusInternalServerError, fmt.Sprintf("probe failed, %v", err))
+		return
+	}
 
 	w.WriteHeader(http.StatusOK)
 }

@@ -1,14 +1,9 @@
 package client
 
 import (
-	"errors"
 	"net/url"
 
 	"github.com/pingcap/dt/pkg/util"
-)
-
-var (
-	ErrResposeCodeUnmath = errors.New("respose code unmath")
 )
 
 type Agent struct {

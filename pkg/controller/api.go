@@ -1,16 +1,16 @@
 package controller
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/juju/errors"
 	"github.com/ngaut/log"
 	"github.com/pingcap/dt/pkg/util"
 )
 
-var ErrRegisterArgs = errors.New("invalid register args")
+var errRegisterArgs = errors.New("invalid register args")
 
 func runHTTPServer(addr string, ctrl *Controller) {
 	log.Debug("start: runHTTPServer")
@@ -27,7 +27,7 @@ func (ctrl *Controller) apiRegisterAgent(w http.ResponseWriter, r *http.Request)
 
 	if agentAddr == "" {
 		util.RespHTTPErr(w, http.StatusInternalServerError,
-			fmt.Sprintf("shutdown agent failed, err:%v", ErrRegisterArgs))
+			fmt.Sprintf("shutdown agent failed, err:%v", errRegisterArgs))
 		return
 	}
 	log.Info("apiRegisterAgent, info:", agentAddr)

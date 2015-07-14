@@ -38,7 +38,7 @@ func NewAgent(cfg *Config) (*Agent, error) {
 		exitCh:   make(chan error, 1)}, nil
 }
 
-func (a *Agent) hb() error {
+func (a *Agent) heartbeat() error {
 	agentAttr := make(url.Values)
 	agentAttr.Set("addr", a.Addr)
 
@@ -48,7 +48,7 @@ func (a *Agent) hb() error {
 func (a *Agent) Register() error {
 	log.Debug("start: register")
 	for {
-		if err := a.hb(); err != nil {
+		if err := a.heartbeat(); err != nil {
 			log.Warning("register failed, errors.Trace(err):", errors.Trace(err))
 			time.Sleep(1 * time.Second)
 		} else {
@@ -59,10 +59,10 @@ func (a *Agent) Register() error {
 	return nil
 }
 
-func (a *Agent) Hb() error {
-	log.Debug("start: hb")
+func (a *Agent) Heartbeat() error {
+	log.Debug("start: heartbeat")
 	for {
-		if err := a.hb(); err != nil {
+		if err := a.heartbeat(); err != nil {
 			log.Warning("hb failed, errors.Trace(err):", errors.Trace(err))
 		}
 		time.Sleep(3 * time.Second)
@@ -72,7 +72,7 @@ func (a *Agent) Hb() error {
 func (a *Agent) Start() error {
 	go runHTTPServer(a)
 	a.Register()
-	go a.Hb()
+	go a.Heartbeat()
 
 	select {
 	case err := <-a.exitCh:

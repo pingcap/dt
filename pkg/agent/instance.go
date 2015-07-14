@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	instanceStateNone     = "uninitialized"
+	instanceStateUninit   = "uninit"
 	instanceStateStarted  = "started"
 	instanceStateStopped  = "stopped"
 	instanceStatePaused   = "paused"
@@ -35,12 +35,12 @@ type Instance struct {
 }
 
 func NewInstance(f *os.File) *Instance {
-	return &Instance{state: instanceStateNone, logfile: f}
+	return &Instance{state: instanceStateUninit, logfile: f}
 }
 
 // TODO: used for checking results
 func ps() string {
-	cmd := exec.Command("sh", "-c", "ps -aux|grep cockroach")
+	cmd := exec.Command("sh", "-c", "ps -efj|grep test")
 	output, _ := cmd.Output()
 
 	return string(output)
@@ -54,8 +54,9 @@ func listIPTables() string {
 	return string(output)
 }
 
-func (inst *Instance) Start(arg, name string) (err error) {
+func (inst *Instance) Start(arg, name string) error {
 	log.Debug("start: startInstance, agent")
+	var err error
 	pidFile := fmt.Sprintf("%s.out", util.GetGUID(name))
 	isNohup := strings.Contains(arg, "nohup")
 
@@ -84,7 +85,7 @@ func (inst *Instance) Start(arg, name string) (err error) {
 	inst.pid = inst.cmd.Process.Pid
 	log.Warning("pid:", inst.pid)
 
-	return
+	return err
 }
 
 func (inst *Instance) Restart(arg, name string) error {
@@ -181,4 +182,8 @@ func (inst *Instance) RecoverPort(port string) error {
 	//log.Warning("recover port out:", listIPTables())
 
 	return nil
+}
+
+func ProbeResult(url string) error {
+	return util.HTTPCall(url, "", nil)
 }
