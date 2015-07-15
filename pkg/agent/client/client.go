@@ -60,11 +60,8 @@ func (a *Agent) CleanUpInstanceData() error {
 	return util.HTTPCall(util.ApiUrl(a.Addr, "api/instance/cleanupdata", ""), "POST", nil)
 }
 
-func (a *Agent) StopInstance(probe string) error {
-	attr := make(url.Values)
-	attr.Set("probe", probe)
-
-	return util.HTTPCall(util.ApiUrl(a.Addr, "api/instance/stop", attr.Encode()), "POST", nil)
+func (a *Agent) StopInstance() error {
+	return util.HTTPCall(util.ApiUrl(a.Addr, "api/instance/stop", ""), "POST", nil)
 }
 
 func (a *Agent) DropPortInstance(port, probe string) error {

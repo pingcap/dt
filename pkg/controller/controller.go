@@ -66,7 +66,6 @@ func (ctrl *Controller) getAgentsCount() int {
 
 func (ctrl *Controller) getAgentAddrs() error {
 	log.Debug("start: getAgentAddrs")
-	var err error
 	agentAddrs := make([]string, ctrl.getAgentsCount())
 
 	i := 0
@@ -89,6 +88,7 @@ func (ctrl *Controller) getAgentAddrs() error {
 	}
 
 	i = 0
+	var err error
 	for _, agent := range ctrl.agents {
 		agent.Addr = agentAddrs[i]
 		if agent.Ip, _, err = net.SplitHostPort(agentAddrs[i]); err != nil {
@@ -97,7 +97,7 @@ func (ctrl *Controller) getAgentAddrs() error {
 		i++
 	}
 
-	return err
+	return nil
 }
 
 func (ctrl *Controller) Start() error {
@@ -171,7 +171,7 @@ func (ctrl *Controller) HandleCmd(cmd *TestCmd) error {
 		}
 	case util.TestCmdStop:
 		for _, inst := range cmd.Instances {
-			if err := ctrl.agents[inst].StopInstance(cmd.Probe); err != nil {
+			if err := ctrl.agents[inst].StopInstance(); err != nil {
 				return errors.Trace(err)
 			}
 		}

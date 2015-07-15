@@ -7,6 +7,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"os/exec"
 	"time"
 
@@ -85,6 +86,20 @@ func ReadFile(file string) ([]byte, error) {
 	buf := bytes.Trim(b, "\n")
 
 	return buf, nil
+}
+
+func CreateLog(dir, file string) (*os.File, error) {
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return nil, errors.Trace(err)
+	}
+
+	path := fmt.Sprintf("%s/%s.log", dir, file)
+	f, err := os.Create(path)
+	if err != nil {
+		return nil, errors.Trace(err)
+	}
+
+	return f, nil
 }
 
 func CheckIsEmpty(strs ...string) bool {

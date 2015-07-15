@@ -3,7 +3,6 @@ package agent
 import (
 	"fmt"
 	"net/url"
-	"os"
 	"time"
 
 	"github.com/juju/errors"
@@ -21,11 +20,7 @@ type Agent struct {
 }
 
 func NewAgent(cfg *Config) (*Agent, error) {
-	if err := os.MkdirAll(cfg.DataDir, 0755); err != nil {
-		return nil, errors.Trace(err)
-	}
-
-	f, err := os.Create(cfg.DataDir + "/agent.log")
+	f, err := util.CreateLog(cfg.DataDir, "agent_cmd")
 	if err != nil {
 		return nil, errors.Trace(err)
 	}

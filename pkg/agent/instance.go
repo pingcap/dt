@@ -40,7 +40,7 @@ func NewInstance(f *os.File) *Instance {
 
 // TODO: used for checking results
 func ps() string {
-	cmd := exec.Command("sh", "-c", "ps -efj|grep test")
+	cmd := exec.Command("sh", "-c", "ps -efj|grep instance")
 	output, _ := cmd.Output()
 
 	return string(output)

@@ -1,5 +1,4 @@
 addr = "127.0.0.1:54321"
-data_dir = "/tmp"
 instance_count = 1
 
 [instance]
@@ -9,22 +8,22 @@ instance_count = 1
 [[test_cmd]]
 cmd = "start"
 instances = ["server1"]
-dir = "/tmp/dt/test"
-args = "nohup ./test &"
+dir = "/tmp/dt/instance"
+args = "nohup ../bin/instance &"
 #probe function url
 probe = "http://127.0.0.1:8080/probe/server/start"
 
-#[[test_cmd]]
-#cmd = "dropport"
-#instances = ["server1"]
-#args = "54300"
-#probe = "http://127.0.0.1:8080/probe/server/dropport"
-#
-#[[test_cmd]]
-#cmd = "recoverport"
-#instances = ["server1"]
-#args = "54300"
-#probe = "http://127.0.0.1:8080/probe/server/recoverport"
+[[test_cmd]]
+cmd = "dropport"
+instances = ["server1"]
+args = "54300"
+probe = "http://127.0.0.1:8080/probe/server/dropport"
+
+[[test_cmd]]
+cmd = "recoverport"
+instances = ["server1"]
+args = "54300"
+probe = "http://127.0.0.1:8080/probe/server/recoverport"
 
 [[test_cmd]]
 cmd = "pause"
@@ -39,8 +38,8 @@ probe = "http://127.0.0.1:8080/probe/server/continue"
 [[test_cmd]]
 cmd = "restart"
 instances = ["server1"]
-dir = "/tmp/dt/test"
-args = "nohup ./test &"
+dir = "/tmp/dt/instance"
+args = "nohup ../bin/instance &"
 probe = "http://127.0.0.1:8080/probe/server/restart"
 
 [[test_cmd]]
@@ -55,7 +54,6 @@ instances = ["server1"]
 [[test_cmd]]
 cmd = "stop"
 instances = ["server1"]
-probe = "http://127.0.0.1:8080/probe/server/stop"
 
 [[test_cmd]]
 cmd = "shutdown"
