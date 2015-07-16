@@ -7,8 +7,9 @@ import (
 )
 
 type Agent struct {
-	Ip   string
-	Addr string
+	Ip                string
+	Addr              string
+	LastHeartbeatUinx int64
 }
 
 func NewAgent(dir, addr, ip string) (*Agent, error) {

@@ -13,3 +13,8 @@ const (
 	TestCmdBackupData    = "backup"
 	TestCmdShutdownAgent = "shutdown"
 )
+
+// heartbeat interval
+const (
+	HeartbeatIntervalSec = 1
+)

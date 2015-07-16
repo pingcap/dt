@@ -18,9 +18,10 @@ const (
 )
 
 var (
-	errCfgInfoUnmatch       = errors.New("unmath config info")
-	errAgentRegisterTimeout = errors.New("register timeout")
-	errTestCmdUnmatch       = errors.New("test cmd kind unmath")
+	errCfgInfoUnmatch        = errors.New("unmath config info")
+	errAgentRegisterTimeout  = errors.New("register timeout")
+	errAgentHeartbeatTimeout = errors.New("breath timeout")
+	errTestCmdUnmatch        = errors.New("test cmd kind unmath")
 )
 
 type Controller struct {
@@ -30,6 +31,7 @@ type Controller struct {
 	agents      map[string]*client.Agent
 	cmds        []*TestCmd
 	agentInfoCh chan string
+	exitCh      chan error
 }
 
 func NewController(cfg *Config) (*Controller, error) {
@@ -37,7 +39,8 @@ func NewController(cfg *Config) (*Controller, error) {
 		Addr:        cfg.Addr,
 		DataDir:     cfg.DataDir,
 		cmds:        cfg.Cmds,
-		agentInfoCh: make(chan string, agentInfoChanSize)}
+		exitCh:      make(chan error, 1),
+		agentInfoCh: make(chan string, agentInfoChanSize*3)}
 
 	instanceCount := 0
 	for _, inst := range cfg.InstanceInfos {
@@ -53,7 +56,7 @@ func NewController(cfg *Config) (*Controller, error) {
 		for i := 0; i < inst.Count; i++ {
 			agent := fmt.Sprintf("%s%d", kind, index)
 			ctrl.agents[agent] = &client.Agent{}
-			instanceCount++
+			index++
 		}
 	}
 
@@ -91,6 +94,7 @@ func (ctrl *Controller) getAgentAddrs() error {
 	var err error
 	for _, agent := range ctrl.agents {
 		agent.Addr = agentAddrs[i]
+		agent.LastHeartbeatUinx = time.Now().Unix()
 		if agent.Ip, _, err = net.SplitHostPort(agentAddrs[i]); err != nil {
 			return errors.Trace(err)
 		}
@@ -100,18 +104,56 @@ func (ctrl *Controller) getAgentAddrs() error {
 	return nil
 }
 
+func (ctrl *Controller) checkAlive() {
+	t := time.NewTicker(3 * util.HeartbeatIntervalSec * time.Second)
+	interval := time.Unix(3*util.HeartbeatIntervalSec, 0).Unix()
+	defer t.Stop()
+
+	setHeartbeat := func(addr string) {
+		for _, agent := range ctrl.agents {
+			if agent.Addr == addr {
+				agent.LastHeartbeatUinx = time.Now().Unix()
+				break
+			}
+		}
+	}
+
+	checkTimeout := func() {
+		now := time.Now().Unix()
+		for _, agent := range ctrl.agents {
+			if now-agent.LastHeartbeatUinx > interval {
+				ctrl.exitCh <- errAgentHeartbeatTimeout
+				return
+			}
+		}
+	}
+
+	for {
+		select {
+		case addr := <-ctrl.agentInfoCh:
+			setHeartbeat(addr)
+		case <-t.C:
+			checkTimeout()
+		}
+	}
+}
+
 func (ctrl *Controller) Start() error {
 	go runHTTPServer(ctrl.Addr, ctrl)
 	if err := ctrl.getAgentAddrs(); err != nil {
 		return errors.Trace(err)
 	}
+	go ctrl.checkAlive()
 
 	var err error
 	for _, cmd := range ctrl.cmds {
+		if len(ctrl.exitCh) > 0 {
+			// TODO: clean up data
+			return errors.Trace(<-ctrl.exitCh)
+		}
 		if err = ctrl.HandleCmd(cmd); err == nil {
 			continue
 		}
-		log.Warning("handle cmd failed, err:", err)
 		if err = ctrl.HandleFailure(); err != nil {
 			return errors.Trace(err)
 		}

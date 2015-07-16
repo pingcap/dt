@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"net"
 	"net/http"
 	"os"
@@ -10,16 +11,16 @@ import (
 	"github.com/ngaut/log"
 )
 
-const (
-	logDir = "/tmp/dt/instance"
+var (
+	logDir = flag.String("log-dir", "/tmp/dt/instance", "the directory to store log")
 )
 
 func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
-	os.MkdirAll(logDir, 0755)
+	os.MkdirAll(*logDir, 0755)
 	log.SetLevelByString("debug")
-	log.SetOutputByName(logDir + "/inst.log")
+	log.SetOutputByName(*logDir + "/inst.log")
 
 	go runHTTPProbeResult()
 

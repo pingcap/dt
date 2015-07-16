@@ -45,7 +45,7 @@ func (a *Agent) Register() error {
 	for {
 		if err := a.heartbeat(); err != nil {
 			log.Warning("register failed, errors.Trace(err):", errors.Trace(err))
-			time.Sleep(1 * time.Second)
+			time.Sleep(util.HeartbeatIntervalSec * time.Second)
 		} else {
 			break
 		}

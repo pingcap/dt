@@ -1,52 +1,66 @@
 addr = "127.0.0.1:54321"
-instance_count = 1
+instance_count = 3
 
 [instance]
 	[instance.server]
-	count=1
+	count = 3
 
 [[test_cmd]]
 cmd = "start"
 instances = ["server1"]
 dir = "/tmp/dt/instance"
-args = "nohup ./cockroach start --stores=ssd=\"/tmp/dbtn1\" --gossip=self= &"
+args = "nohup ./cockroach start --stores=ssd=\"/tmp/db0\" --addr=\":8080\" --gossip=\":8080\" &"
 #probe function url
 probe = "http://127.0.0.1:9090/probe/server/start"
 
 [[test_cmd]]
-cmd = "dropport"
-instances = ["server1"]
-args = "8080"
-probe = "http://127.0.0.1:9090/probe/server/dropport"
-
-[[test_cmd]]
-cmd = "recoverport"
-instances = ["server1"]
-args = "8080"
-probe = "http://127.0.0.1:9090/probe/server/recoverport"
-
-[[test_cmd]]
-cmd = "pause"
-instances = ["server1"]
-probe = "http://127.0.0.1:9090/probe/server/pause"
-
-[[test_cmd]]
-cmd = "continue"
-instances = ["server1"]
-probe = "http://127.0.0.1:9090/probe/server/continue"
-
-[[test_cmd]]
-cmd = "restart"
-instances = ["server1"]
-args = "nohup ./cockroach start --stores=ssd=\"/tmp/dbtn1\" --gossip=self= &"
+cmd = "start"
+instances = ["server2"]
 dir = "/tmp/dt/instance"
-probe = "http://127.0.0.1:9090/probe/server/restart"
+args = "nohup ./cockroach start --stores=ssd=\"/tmp/db1\" --addr=\":8080\" --gossip=\":8080\" &"
+probe = "http://127.0.0.1:9090/probe/server/start"
 
+[[test_cmd]]
+cmd = "start"
+instances = ["server3"]
+dir = "/tmp/dt/instance"
+args = "nohup ./cockroach start --stores=ssd=\"/tmp/db2\" --addr=\":8080\" --gossip=\":8080\" &"
+probe = "http://127.0.0.1:9090/probe/server/start"
+
+
+#[[test_cmd]]
+#cmd = "dropport"
+#instances = ["server1"]
+#args = "8080"
+#probe = "http://127.0.0.1:9090/probe/server/dropport"
+#
+#[[test_cmd]]
+#cmd = "recoverport"
+#instances = ["server1"]
+#args = "8080"
+#probe = "http://127.0.0.1:9090/probe/server/recoverport"
+#
+#[[test_cmd]]
+#cmd = "pause"
+#instances = ["server1"]
+#probe = "http://127.0.0.1:9090/probe/server/pause"
+#
+#[[test_cmd]]
+#cmd = "continue"
+#instances = ["server1"]
+#probe = "http://127.0.0.1:9090/probe/server/continue"
+#
+#[[test_cmd]]
+#cmd = "restart"
+#instances = ["server1"]
+#args = "nohup ./cockroach start --stores=ssd=\"/tmp/dbtn1\" --addr=\":8080\" --gossip=\":8080\" &"
+#dir = "/tmp/dt/instance"
+#probe = "http://127.0.0.1:9090/probe/server/restart"
+#
 [[test_cmd]]
 cmd = "stop"
-instances = ["server1"]
-probe = "http://127.0.0.1:9090/probe/server/stop"
+instances = ["server1", "server2", "server3"]
 
 [[test_cmd]]
 cmd = "shutdown"
-instances = ["server1"]
+instances = ["server1", "server2", "server3"]
