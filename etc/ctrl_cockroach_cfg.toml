@@ -6,6 +6,12 @@ instance_count = 3
 	count = 3
 
 [[test_cmd]]
+cmd = "init"
+instances = ["server1"]
+args = "./cockroach init --stores=ssd=\"./db0\""
+probe = "http://127.0.0.1:9090/probe/server/init"
+
+[[test_cmd]]
 cmd = "start"
 instances = ["server1"]
 dir = "./dt/instance"

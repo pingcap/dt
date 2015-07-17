@@ -105,8 +105,8 @@ func (ctrl *Controller) getAgentAddrs() error {
 }
 
 func (ctrl *Controller) checkAlive() {
-	t := time.NewTicker(3 * util.HeartbeatIntervalSec * time.Second)
 	interval := 3 * util.HeartbeatIntervalSec
+	t := time.NewTicker(interval)
 	defer t.Stop()
 
 	setHeartbeat := func(addr string) {
