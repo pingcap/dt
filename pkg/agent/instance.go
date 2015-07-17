@@ -55,7 +55,6 @@ func listIPTables() string {
 }
 
 func (inst *Instance) Start(arg, name string) error {
-	log.Debug("start: startInstance, agent")
 	var err error
 	pidFile := fmt.Sprintf("%s.out", util.GetGUID(name))
 	isNohup := strings.Contains(arg, "nohup")
@@ -67,7 +66,7 @@ func (inst *Instance) Start(arg, name string) error {
 		return errors.Trace(err)
 	}
 
-	log.Warning("start out:", ps(), "cmd:", arg)
+	defer log.Warning("start out:", ps(), "cmd:", arg, "pid:", inst.pid)
 
 	inst.state = instanceStateStarted
 	if isNohup {
@@ -79,13 +78,21 @@ func (inst *Instance) Start(arg, name string) error {
 			return errors.Trace(err)
 		}
 
-		log.Warning("nohup, pid:", inst.pid)
 		return err
 	}
 	inst.pid = inst.cmd.Process.Pid
-	log.Warning("pid:", inst.pid)
 
 	return err
+}
+
+func (inst *Instance) Set(arg string) error {
+	log.Debug("start: set, arg:", arg)
+	var err error
+	if _, err = util.ExecCmd(arg, inst.logfile); err != nil {
+		return errors.Trace(err)
+	}
+
+	return nil
 }
 
 func (inst *Instance) Restart(arg, name string) error {

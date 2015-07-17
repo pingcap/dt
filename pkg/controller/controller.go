@@ -18,10 +18,10 @@ const (
 )
 
 var (
-	errCfgInfoUnmatch        = errors.New("unmath config info")
+	errCfgInfoUnmatch        = errors.New("unmatch config info")
 	errAgentRegisterTimeout  = errors.New("register timeout")
-	errAgentHeartbeatTimeout = errors.New("breath timeout")
-	errTestCmdUnmatch        = errors.New("test cmd kind unmath")
+	errAgentHeartbeatTimeout = errors.New("heartbeat timeout")
+	errTestCmdUnmatch        = errors.New("test cmd kind unmatch")
 )
 
 type Controller struct {
@@ -94,7 +94,7 @@ func (ctrl *Controller) getAgentAddrs() error {
 	var err error
 	for _, agent := range ctrl.agents {
 		agent.Addr = agentAddrs[i]
-		agent.LastHeartbeatUinx = time.Now().Unix()
+		agent.LastHeartbeat = time.Now()
 		if agent.Ip, _, err = net.SplitHostPort(agentAddrs[i]); err != nil {
 			return errors.Trace(err)
 		}
@@ -106,22 +106,21 @@ func (ctrl *Controller) getAgentAddrs() error {
 
 func (ctrl *Controller) checkAlive() {
 	t := time.NewTicker(3 * util.HeartbeatIntervalSec * time.Second)
-	interval := time.Unix(3*util.HeartbeatIntervalSec, 0).Unix()
+	interval := 3 * util.HeartbeatIntervalSec
 	defer t.Stop()
 
 	setHeartbeat := func(addr string) {
 		for _, agent := range ctrl.agents {
 			if agent.Addr == addr {
-				agent.LastHeartbeatUinx = time.Now().Unix()
+				agent.LastHeartbeat = time.Now()
 				break
 			}
 		}
 	}
 
 	checkTimeout := func() {
-		now := time.Now().Unix()
 		for _, agent := range ctrl.agents {
-			if now-agent.LastHeartbeatUinx > interval {
+			if time.Now().Sub(agent.LastHeartbeat) > interval {
 				ctrl.exitCh <- errAgentHeartbeatTimeout
 				return
 			}
@@ -183,70 +182,65 @@ func (ctrl *Controller) HandleFailure() error {
 }
 
 func (ctrl *Controller) HandleCmd(cmd *TestCmd) error {
-	log.Debug("start: handlecmd, cmd:", cmd.Name)
+	for _, inst := range cmd.Instances {
+		if err := ctrl.DoCmd(cmd, inst); err != nil {
+			return errors.Trace(err)
+		}
+	}
+
+	return nil
+}
+
+func (ctrl *Controller) DoCmd(cmd *TestCmd, inst string) error {
+	log.Debug("start: docmd, cmd:", cmd.Name)
 	switch strings.ToLower(cmd.Name) {
 	case util.TestCmdStart:
-		for _, inst := range cmd.Instances {
-			err := ctrl.agents[inst].StartInstance(cmd.Args, inst, cmd.Dir, cmd.Probe)
-			if err != nil {
-				return errors.Trace(err)
-			}
+		err := ctrl.agents[inst].StartInstance(cmd.Args, inst, cmd.Dir, cmd.Probe)
+		if err != nil {
+			return errors.Trace(err)
+		}
+	case util.TestCmdInit:
+		err := ctrl.agents[inst].SetInstance(cmd.Args, cmd.Probe)
+		if err != nil {
+			return errors.Trace(err)
 		}
 	case util.TestCmdRestart:
-		for _, inst := range cmd.Instances {
-			err := ctrl.agents[inst].RestartInstance(cmd.Args, inst, cmd.Dir, cmd.Probe)
-			if err != nil {
-				return errors.Trace(err)
-			}
+		err := ctrl.agents[inst].RestartInstance(cmd.Args, inst, cmd.Dir, cmd.Probe)
+		if err != nil {
+			return errors.Trace(err)
 		}
 	case util.TestCmdPause:
-		for _, inst := range cmd.Instances {
-			if err := ctrl.agents[inst].PauseInstance(cmd.Probe); err != nil {
-				return errors.Trace(err)
-			}
+		if err := ctrl.agents[inst].PauseInstance(cmd.Probe); err != nil {
+			return errors.Trace(err)
 		}
 	case util.TestCmdContinue:
-		for _, inst := range cmd.Instances {
-			if err := ctrl.agents[inst].ContinueInstance(cmd.Probe); err != nil {
-				return errors.Trace(err)
-			}
+		if err := ctrl.agents[inst].ContinueInstance(cmd.Probe); err != nil {
+			return errors.Trace(err)
 		}
 	case util.TestCmdStop:
-		for _, inst := range cmd.Instances {
-			if err := ctrl.agents[inst].StopInstance(); err != nil {
-				return errors.Trace(err)
-			}
+		if err := ctrl.agents[inst].StopInstance(); err != nil {
+			return errors.Trace(err)
 		}
 	case util.TestCmdDropPort:
-		for _, inst := range cmd.Instances {
-			if err := ctrl.agents[inst].DropPortInstance(cmd.Args, cmd.Probe); err != nil {
-				return errors.Trace(err)
-			}
+		if err := ctrl.agents[inst].DropPortInstance(cmd.Args, cmd.Probe); err != nil {
+			return errors.Trace(err)
 		}
 	case util.TestCmdRecoverPort:
-		for _, inst := range cmd.Instances {
-			if err := ctrl.agents[inst].RecoverPortInstance(cmd.Args, cmd.Probe); err != nil {
-				return errors.Trace(err)
-			}
+		if err := ctrl.agents[inst].RecoverPortInstance(cmd.Args, cmd.Probe); err != nil {
+			return errors.Trace(err)
 		}
 	case util.TestCmdShutdownAgent:
-		for _, inst := range cmd.Instances {
-			if err := ctrl.agents[inst].Shutdown(); err != nil {
-				return errors.Trace(err)
-			}
+		if err := ctrl.agents[inst].Shutdown(); err != nil {
+			return errors.Trace(err)
 		}
 	case util.TestCmdBackupData:
-		for _, inst := range cmd.Instances {
-			log.Info("backup, dir:", cmd.Dir)
-			if err := ctrl.agents[inst].BackupInstanceData(cmd.Dir); err != nil {
-				return errors.Trace(err)
-			}
+		log.Info("backup, dir:", cmd.Dir)
+		if err := ctrl.agents[inst].BackupInstanceData(cmd.Dir); err != nil {
+			return errors.Trace(err)
 		}
 	case util.TestCmdCleanUpData:
-		for _, inst := range cmd.Instances {
-			if err := ctrl.agents[inst].CleanUpInstanceData(); err != nil {
-				return errors.Trace(err)
-			}
+		if err := ctrl.agents[inst].CleanUpInstanceData(); err != nil {
+			return errors.Trace(err)
 		}
 	default:
 		return errors.Trace(errTestCmdUnmatch)

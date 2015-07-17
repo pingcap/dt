@@ -2,18 +2,27 @@ package client
 
 import (
 	"net/url"
+	"time"
 
 	"github.com/pingcap/dt/pkg/util"
 )
 
 type Agent struct {
-	Ip                string
-	Addr              string
-	LastHeartbeatUinx int64
+	Ip            string
+	Addr          string
+	LastHeartbeat time.Time
 }
 
 func NewAgent(dir, addr, ip string) (*Agent, error) {
 	return &Agent{Ip: ip, Addr: addr}, nil
+}
+
+func (a *Agent) SetInstance(cmd, probe string) error {
+	attr := make(url.Values)
+	attr.Set("cmd", cmd)
+	attr.Set("probe", probe)
+
+	return util.HTTPCall(util.ApiUrl(a.Addr, "api/instance/set", attr.Encode()), "POST", nil)
 }
 
 func (a *Agent) StartInstance(cmd, instName, dir, probe string) error {

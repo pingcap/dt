@@ -1,8 +1,13 @@
 package util
 
+import (
+	"time"
+)
+
 // controller test cmd name
 const (
 	TestCmdStart         = "start"
+	TestCmdInit          = "init"
 	TestCmdRestart       = "restart"
 	TestCmdPause         = "pause"
 	TestCmdContinue      = "continue"
@@ -16,5 +21,5 @@ const (
 
 // heartbeat interval
 const (
-	HeartbeatIntervalSec = 1
+	HeartbeatIntervalSec = time.Second
 )

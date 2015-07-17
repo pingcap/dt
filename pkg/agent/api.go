@@ -17,6 +17,7 @@ func runHTTPServer(a *Agent) error {
 	inst := a.inst
 
 	m.HandleFunc("/api/instance/start", inst.apiStart).Methods("Post", "Put")
+	m.HandleFunc("/api/instance/set", inst.apiSet).Methods("Post", "Put")
 	m.HandleFunc("/api/instance/restart", inst.apiRestart).Methods("Post", "Put")
 	m.HandleFunc("/api/instance/pause", inst.apiPause).Methods("Post", "Put")
 	m.HandleFunc("/api/instance/continue", inst.apiContinue).Methods("Post", "Put")
@@ -53,6 +54,29 @@ func (inst *Instance) apiStart(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	time.Sleep(2 * time.Second)
+	if err := ProbeResult(probe); err != nil {
+		util.RespHTTPErr(w, http.StatusInternalServerError,
+			fmt.Sprintf("probe failed, %v", err))
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func (inst *Instance) apiSet(w http.ResponseWriter, r *http.Request) {
+	cmd := r.FormValue("cmd")
+	probe := r.FormValue("probe")
+	if util.CheckIsEmpty(cmd, probe) {
+		util.RespHTTPErr(w, http.StatusBadRequest, "")
+		return
+	}
+
+	if err := inst.Set(cmd); err != nil {
+		util.RespHTTPErr(w, http.StatusInternalServerError,
+			fmt.Sprintf("set instance failed, err - %v", err))
+		return
+	}
+
 	if err := ProbeResult(probe); err != nil {
 		util.RespHTTPErr(w, http.StatusInternalServerError,
 			fmt.Sprintf("probe failed, %v", err))

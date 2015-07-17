@@ -40,6 +40,7 @@ func main() {
 func runHTTPProbeResult() {
 	m := mux.NewRouter()
 	m.HandleFunc("/probe/server/start", probeTest)
+	m.HandleFunc("/probe/server/init", probeTest)
 	m.HandleFunc("/probe/server/restart", probeTest)
 	m.HandleFunc("/probe/server/dropport", probeTest)
 	m.HandleFunc("/probe/server/recoverport", probeTest)
