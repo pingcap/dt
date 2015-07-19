@@ -77,7 +77,7 @@ probe = "http://127.0.0.1:9090/probe/server/dropport?reslut=nopass"
 #
 #[test_cmd]]
 #cmd = "stop"
-#nstances = ["server1", "server2", "server3"]
+#instances = ["server1", "server2", "server3"]
 
 [[test_cmd]]
 cmd = "shutdown"
