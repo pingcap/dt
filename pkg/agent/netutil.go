@@ -16,7 +16,7 @@ func DropPort(port string) error {
 	}
 
 	cmdStr = fmt.Sprintf("sudo iptables -A INPUT -p tcp --dport %s -j DROP -w", port)
-	if _, err := util.ExecCmd(cmdStr, os.Stdout); err != nil {
+	if _, err = util.ExecCmd(cmdStr, os.Stdout); err != nil {
 		return errors.Trace(err)
 	}
 

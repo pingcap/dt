@@ -68,7 +68,7 @@ func (ctrl *Controller) getAgentsCount() int {
 }
 
 func (ctrl *Controller) getAgentAddrs() error {
-	log.Debug("start: getAgentAddrs")
+	log.Debug("start: getAgentAddrs, count:", ctrl.getAgentsCount())
 	agentAddrs := make([]string, ctrl.getAgentsCount())
 
 	i := 0
@@ -105,7 +105,7 @@ func (ctrl *Controller) getAgentAddrs() error {
 }
 
 func (ctrl *Controller) checkAlive() {
-	interval := 3 * util.HeartbeatIntervalSec
+	interval := 5 * util.HeartbeatIntervalSec
 	t := time.NewTicker(interval)
 	defer t.Stop()
 
@@ -153,9 +153,9 @@ func (ctrl *Controller) Start() error {
 		if err = ctrl.HandleCmd(cmd); err == nil {
 			continue
 		}
-		if err = ctrl.HandleFailure(); err != nil {
-			return errors.Trace(err)
-		}
+		log.Warning("handle cmd failed, err - ", err)
+		err = ctrl.HandleFailure()
+		return errors.Trace(err)
 	}
 
 	return nil

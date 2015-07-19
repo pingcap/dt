@@ -44,8 +44,8 @@ func (a *Agent) Register() error {
 	log.Debug("start: register")
 	for {
 		if err := a.heartbeat(); err != nil {
-			log.Warning("register failed, errors.Trace(err):", errors.Trace(err))
-			time.Sleep(util.HeartbeatIntervalSec * time.Second)
+			log.Warning("register failed, err:", err)
+			time.Sleep(util.HeartbeatIntervalSec)
 		} else {
 			break
 		}
@@ -71,6 +71,7 @@ func (a *Agent) Start() error {
 
 	select {
 	case err := <-a.exitCh:
+		time.Sleep(1 * time.Second)
 		if err != nil {
 			return errors.Trace(err)
 		}

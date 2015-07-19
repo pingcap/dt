@@ -34,12 +34,24 @@ args = "nohup ./cockroach start --stores=ssd=\"./db2\" --addr=\":8080\" --gossip
 probe = "http://127.0.0.1:9090/probe/server/start"
 
 
-#[[test_cmd]]
-#cmd = "dropport"
-#instances = ["server1"]
-#args = "8080"
-#probe = "http://127.0.0.1:9090/probe/server/dropport"
-#
+[[test_cmd]]
+cmd = "dropport"
+instances = ["server2"]
+args = "8081"
+probe = "http://127.0.0.1:9090/probe/server/dropport?reslut=pass"
+
+[[test_cmd]]
+cmd = "dropport"
+instances = ["server3"]
+args = "8082"
+probe = "http://127.0.0.1:9090/probe/server/dropport?reslut=pass"
+
+[[test_cmd]]
+cmd = "dropport"
+instances = ["server1"]
+args = "8080"
+probe = "http://127.0.0.1:9090/probe/server/dropport?reslut=nopass"
+
 #[[test_cmd]]
 #cmd = "recoverport"
 #instances = ["server1"]
@@ -63,9 +75,9 @@ probe = "http://127.0.0.1:9090/probe/server/start"
 #dir = "./dt/instance"
 #probe = "http://127.0.0.1:9090/probe/server/restart"
 #
-[[test_cmd]]
-cmd = "stop"
-instances = ["server1", "server2", "server3"]
+#[test_cmd]]
+#cmd = "stop"
+#nstances = ["server1", "server2", "server3"]
 
 [[test_cmd]]
 cmd = "shutdown"
