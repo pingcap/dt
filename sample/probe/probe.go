@@ -46,10 +46,10 @@ func runHTTPProbeResult() {
 	m.HandleFunc("/probe/server/start", probeStart)
 	m.HandleFunc("/probe/server/init", probeTest)
 	m.HandleFunc("/probe/server/restart", probeTest)
-	m.HandleFunc("/probe/server/dropport", probeDropport)
-	m.HandleFunc("/probe/server/recoverport", probeTest)
-	m.HandleFunc("/probe/server/pause", probeTest)
-	m.HandleFunc("/probe/server/continue", probeTest)
+	m.HandleFunc("/probe/server/dropport", probeDropPort)
+	m.HandleFunc("/probe/server/recoverport", probeRecoverPort)
+	m.HandleFunc("/probe/server/pause", probePause)
+	m.HandleFunc("/probe/server/continue", probeContinue)
 	m.HandleFunc("/probe/server/stop", probeTest)
 
 	http.Handle("/", m)
@@ -64,7 +64,7 @@ func generateKey() string {
 	return fmt.Sprintf("%08d", keyGlobal)
 }
 
-func isPass(result string) bool {
+func isInvertRet(result string) bool {
 	if result == "pass" {
 		return true
 	}
@@ -72,27 +72,11 @@ func isPass(result string) bool {
 	return false
 }
 
-func probeStart(w http.ResponseWriter, r *http.Request) {
-	log.Debug("start: probestart")
-	key := generateKey()
-	DB := makeDBClient(*sAddr)
-	if err := DB.Put(key, "start"+key); err != nil {
-		util.RespHTTPErr(w, http.StatusInternalServerError, err.Error())
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-	log.Info("end: probestart")
-}
-
-func probeDropport(w http.ResponseWriter, r *http.Request) {
-	log.Debug("start: probe drop port")
-	ret := r.FormValue("result")
-	key := generateKey()
+func probePass(w http.ResponseWriter, isInvert, key, flag string) {
 	exitCh := make(chan bool, 1)
 	go func() {
 		DB := makeDBClient(*sAddr)
-		if err := DB.Put(key, "dropport"+key); err != nil {
+		if err := DB.Put(key, flag+key); err != nil {
 			util.RespHTTPErr(w, http.StatusInternalServerError, err.Error())
 			exitCh <- true
 		}
@@ -102,12 +86,12 @@ func probeDropport(w http.ResponseWriter, r *http.Request) {
 	timeout := time.After(5 * time.Second)
 	select {
 	case exit := <-exitCh:
-		if (exit && isPass(ret)) || (!exit && !isPass(ret)) {
+		if (exit && isInvertRet(isInvert)) || (!exit && !isInvertRet(isInvert)) {
 			return
 		}
 		break
 	case <-timeout:
-		if !isPass(ret) {
+		if !isInvertRet(isInvert) {
 			break
 		}
 		util.RespHTTPErr(w, http.StatusInternalServerError, "timeout")
@@ -115,7 +99,53 @@ func probeDropport(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	log.Info("end: probe drop port")
+}
+
+func probeStart(w http.ResponseWriter, r *http.Request) {
+	key := generateKey()
+	DB := makeDBClient(*sAddr)
+	if err := DB.Put(key, "start"+key); err != nil {
+		util.RespHTTPErr(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func probeDropPort(w http.ResponseWriter, r *http.Request) {
+	log.Debug("start: probe drop port")
+	isInvert := r.FormValue("result")
+	key := generateKey()
+
+	probePass(w, isInvert, key, "dorpport")
+	log.Debug("end: probe drop port")
+}
+
+func probeRecoverPort(w http.ResponseWriter, r *http.Request) {
+	log.Debug("start: probe recover port")
+	isInvert := r.FormValue("result")
+	key := generateKey()
+
+	probePass(w, isInvert, key, "recoverport")
+	log.Debug("end: probe recover port")
+}
+
+func probePause(w http.ResponseWriter, r *http.Request) {
+	log.Debug("start: probe pause")
+	isInvert := r.FormValue("result")
+	key := generateKey()
+
+	probePass(w, isInvert, key, "pause")
+	log.Debug("end: probe pause")
+}
+
+func probeContinue(w http.ResponseWriter, r *http.Request) {
+	log.Debug("start: probe continue")
+	isInvert := r.FormValue("result")
+	key := generateKey()
+
+	probePass(w, isInvert, key, "continue")
+	log.Debug("end: probe continue")
 }
 
 func probeTest(w http.ResponseWriter, r *http.Request) {
