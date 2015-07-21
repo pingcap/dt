@@ -12,6 +12,7 @@ const (
 	TestCmdPause         = "pause"
 	TestCmdContinue      = "continue"
 	TestCmdStop          = "stop"
+	TestCmdSleep         = "sleep"
 	TestCmdDropPort      = "dropport"
 	TestCmdRecoverPort   = "recoverport"
 	TestCmdCleanUpData   = "cleanup"
