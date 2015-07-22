@@ -3,13 +3,13 @@ package main
 import (
 	"flag"
 	"fmt"
+	"os"
 	"runtime"
 
 	"github.com/juju/errors"
 	"github.com/ngaut/log"
 	"github.com/pingcap/dt/pkg/agent"
 	ctrl "github.com/pingcap/dt/pkg/controller"
-	"github.com/pingcap/dt/pkg/util"
 )
 
 var (
@@ -24,13 +24,15 @@ type Server interface {
 }
 
 func setLogInfo(level, logDir, file string) error {
-	if _, err := util.CreateLog(logDir, file); err != nil {
+	if err := os.MkdirAll(logDir, 0755); err != nil {
 		return errors.Trace(err)
 	}
 
 	path := fmt.Sprintf("%s/%s.log", logDir, file)
 	log.SetLevelByString(level)
-	log.SetOutputByName(path)
+	if err := log.SetOutputByName(path); err != nil {
+		return errors.Trace(err)
+	}
 
 	return nil
 }

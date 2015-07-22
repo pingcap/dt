@@ -209,6 +209,7 @@ func (ctrl *Controller) HandleCmd(cmd *TestCmd) error {
 
 func DoCmd(cmd *TestCmd, agent *client.Agent, inst string) error {
 	log.Debug("start: docmd, cmd:", cmd.Name)
+	defer log.Debug("end: docmd")
 	switch strings.ToLower(cmd.Name) {
 	case util.TestCmdStart:
 		err := agent.StartInstance(cmd.Args, inst, cmd.Dir, cmd.Probe)

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"runtime"
+	"strconv"
 	"time"
 
 	"github.com/cockroachdb/cockroach/client"
@@ -16,6 +17,11 @@ import (
 var (
 	addr  = flag.String("addr", ":9090", "http listen addr")
 	sAddr = flag.String("s-addr", "xia-pc:8080", "server addr")
+)
+
+const (
+	timeoutFlag = true
+	passResult  = "pass"
 )
 
 var keyGlobal = 1
@@ -64,34 +70,45 @@ func generateKey() string {
 	return fmt.Sprintf("%08d", keyGlobal)
 }
 
-func isInvertRet(result string) bool {
-	if result == "pass" {
+func checkResult(err error, result string, flag bool) bool {
+	if flag == timeoutFlag {
+		if result == "pass" {
+			return false
+		}
+		return true
+	}
+
+	if (err == nil && result == passResult) || (err != nil && result != passResult) {
 		return true
 	}
 
 	return false
 }
 
-func probePass(w http.ResponseWriter, isInvert, key, flag string) {
-	exitCh := make(chan bool, 1)
+func probePass(w http.ResponseWriter, isPass, key, flag string) {
+	resultCh := make(chan error, 1)
 	go func() {
 		DB := makeDBClient(*sAddr)
 		if err := DB.Put(key, flag+key); err != nil {
-			util.RespHTTPErr(w, http.StatusInternalServerError, err.Error())
-			exitCh <- true
+			resultCh <- err
 		}
-		exitCh <- false
+		resultCh <- nil
 	}()
 
 	timeout := time.After(5 * time.Second)
 	select {
-	case exit := <-exitCh:
-		if (exit && isInvertRet(isInvert)) || (!exit && !isInvertRet(isInvert)) {
+	case ret := <-resultCh:
+		if checkResult(ret, isPass, !timeoutFlag) {
+			break
+		}
+		if ret == nil {
+			util.RespHTTPErr(w, http.StatusBadRequest, "")
 			return
 		}
-		break
+		util.RespHTTPErr(w, http.StatusInternalServerError, ret.Error())
+		return
 	case <-timeout:
-		if !isInvertRet(isInvert) {
+		if checkResult(nil, isPass, timeoutFlag) {
 			break
 		}
 		util.RespHTTPErr(w, http.StatusInternalServerError, "timeout")
@@ -103,6 +120,8 @@ func probePass(w http.ResponseWriter, isInvert, key, flag string) {
 
 func probeStart(w http.ResponseWriter, r *http.Request) {
 	key := generateKey()
+	time.Sleep(5 * time.Second)
+
 	DB := makeDBClient(*sAddr)
 	if err := DB.Put(key, "start"+key); err != nil {
 		util.RespHTTPErr(w, http.StatusInternalServerError, err.Error())
@@ -114,37 +133,52 @@ func probeStart(w http.ResponseWriter, r *http.Request) {
 
 func probeDropPort(w http.ResponseWriter, r *http.Request) {
 	log.Debug("start: probe drop port")
-	isInvert := r.FormValue("result")
+	ret := r.FormValue("result")
+	timeout := r.FormValue("timeout")
+	t, err := strconv.Atoi(timeout)
+	if err != nil {
+		util.RespHTTPErr(w, http.StatusBadRequest, err.Error())
+	}
 	key := generateKey()
 
-	probePass(w, isInvert, key, "dorpport")
+	time.Sleep(time.Duration(t) * time.Second)
+	probePass(w, ret, key, "dorpport")
 	log.Debug("end: probe drop port")
 }
 
 func probeRecoverPort(w http.ResponseWriter, r *http.Request) {
 	log.Debug("start: probe recover port")
-	isInvert := r.FormValue("result")
+	ret := r.FormValue("result")
+	if ret == "" {
+		ret = passResult
+	}
 	key := generateKey()
 
-	probePass(w, isInvert, key, "recoverport")
+	probePass(w, ret, key, "recoverport")
 	log.Debug("end: probe recover port")
 }
 
 func probePause(w http.ResponseWriter, r *http.Request) {
 	log.Debug("start: probe pause")
-	isInvert := r.FormValue("result")
+	ret := r.FormValue("result")
+	if ret == "" {
+		ret = passResult
+	}
 	key := generateKey()
 
-	probePass(w, isInvert, key, "pause")
+	probePass(w, ret, key, "pause")
 	log.Debug("end: probe pause")
 }
 
 func probeContinue(w http.ResponseWriter, r *http.Request) {
 	log.Debug("start: probe continue")
-	isInvert := r.FormValue("result")
+	ret := r.FormValue("result")
+	if ret == "" {
+		ret = passResult
+	}
 	key := generateKey()
 
-	probePass(w, isInvert, key, "continue")
+	probePass(w, ret, key, "continue")
 	log.Debug("end: probe continue")
 }
 

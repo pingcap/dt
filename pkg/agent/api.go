@@ -54,8 +54,8 @@ func (inst *Instance) apiStart(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	time.Sleep(2 * time.Second)
-	if errMsg := ProbeResult(r.FormValue("probe")); errMsg != "" {
-		util.RespHTTPErr(w, http.StatusInternalServerError, errMsg)
+	if err := ProbeResult(r.FormValue("probe")); err != nil {
+		util.RespHTTPErr(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
@@ -75,8 +75,8 @@ func (inst *Instance) apiSet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if errMsg := ProbeResult(r.FormValue("probe")); errMsg != "" {
-		util.RespHTTPErr(w, http.StatusInternalServerError, errMsg)
+	if err := ProbeResult(r.FormValue("probe")); err != nil {
+		util.RespHTTPErr(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
@@ -98,8 +98,8 @@ func (inst *Instance) apiRestart(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if errMsg := ProbeResult(r.FormValue("probe")); errMsg != "" {
-		util.RespHTTPErr(w, http.StatusInternalServerError, errMsg)
+	if err := ProbeResult(r.FormValue("probe")); err != nil {
+		util.RespHTTPErr(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
@@ -113,8 +113,8 @@ func (inst *Instance) apiPause(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if errMsg := ProbeResult(r.FormValue("probe")); errMsg != "" {
-		util.RespHTTPErr(w, http.StatusInternalServerError, errMsg)
+	if err := ProbeResult(r.FormValue("probe")); err != nil {
+		util.RespHTTPErr(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
@@ -128,8 +128,8 @@ func (inst *Instance) apiContinue(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if errMsg := ProbeResult(r.FormValue("probe")); errMsg != "" {
-		util.RespHTTPErr(w, http.StatusInternalServerError, errMsg)
+	if err := ProbeResult(r.FormValue("probe")); err != nil {
+		util.RespHTTPErr(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
@@ -185,8 +185,8 @@ func (inst *Instance) apiDropPort(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if errMsg := ProbeResult(r.FormValue("probe")); errMsg != "" {
-		util.RespHTTPErr(w, http.StatusInternalServerError, errMsg)
+	if err := ProbeResult(r.FormValue("probe")); err != nil {
+		util.RespHTTPErr(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
@@ -207,8 +207,8 @@ func (inst *Instance) apiRecoverPort(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if errMsg := ProbeResult(r.FormValue("probe")); errMsg != "" {
-		util.RespHTTPErr(w, http.StatusInternalServerError, errMsg)
+	if err := ProbeResult(r.FormValue("probe")); err != nil {
+		util.RespHTTPErr(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
@@ -225,15 +225,15 @@ func (a *Agent) apiShutdown(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func ProbeResult(url string) string {
+func ProbeResult(url string) error {
 	if url == "" {
-		return ""
+		return nil
 	}
 
 	err := util.HTTPCall(url, "", nil)
 	if err != nil {
-		return fmt.Sprintf("probe failed, err - %s", err.Error())
+		return err
 	}
 
-	return ""
+	return nil
 }

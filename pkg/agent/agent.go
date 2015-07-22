@@ -54,13 +54,26 @@ func (a *Agent) Register() error {
 	return nil
 }
 
-func (a *Agent) Heartbeat() error {
+func (a *Agent) Heartbeat() {
 	log.Debug("start: heartbeat")
-	for {
-		if err := a.heartbeat(); err != nil {
-			log.Warning("hb failed, errors.Trace(err):", errors.Trace(err))
+	wakeCh := make(chan bool, 1)
+
+	go func(ch chan bool) {
+		for {
+			ch <- true
+			time.Sleep(3 * time.Second)
 		}
-		time.Sleep(3 * time.Second)
+	}(wakeCh)
+
+	for {
+		select {
+		case <-wakeCh:
+			if err := a.heartbeat(); err != nil {
+				log.Warning("hb failed, errors.Trace(err):", errors.Trace(err))
+			}
+		case <-a.exitCh:
+			return
+		}
 	}
 }
 
