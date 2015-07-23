@@ -56,21 +56,16 @@ func (a *Agent) Register() error {
 
 func (a *Agent) Heartbeat() {
 	log.Debug("start: heartbeat")
-	wakeCh := make(chan bool, 1)
-
-	go func(ch chan bool) {
-		for {
-			ch <- true
-			time.Sleep(3 * time.Second)
-		}
-	}(wakeCh)
+	t := time.NewTicker(3 * time.Second)
+	defer t.Stop()
 
 	for {
 		select {
-		case <-wakeCh:
+		case <-t.C:
 			if err := a.heartbeat(); err != nil {
-				log.Warning("hb failed, errors.Trace(err):", errors.Trace(err))
+				log.Warning("heartbeat failed, err - ", err)
 			}
+			log.Debug("heartbeat")
 		case <-a.exitCh:
 			return
 		}

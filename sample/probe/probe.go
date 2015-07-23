@@ -6,17 +6,19 @@ import (
 	"net/http"
 	"runtime"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/cockroachdb/cockroach/client"
 	"github.com/gorilla/mux"
+	"github.com/juju/errors"
 	"github.com/ngaut/log"
 	"github.com/pingcap/dt/pkg/util"
 )
 
 var (
-	addr  = flag.String("addr", ":9090", "http listen addr")
-	sAddr = flag.String("s-addr", "xia-pc:8080", "server addr")
+	addr   = flag.String("addr", ":9090", "http listen addr")
+	sAddrs = flag.String("s-addr", "xia-pc:8080,xia-pc:8081,xia-pc:8082", "server addrs")
 )
 
 const (
@@ -24,13 +26,21 @@ const (
 	passResult  = "pass"
 )
 
-var keyGlobal = 1
+var (
+	keyGlobal = 1
+	emptyKV   = client.KeyValue{}
+	servAddrs []string
+)
 
 func main() {
 	flag.Parse()
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
 	log.Debug("start probe")
+	servAddrs = strings.Split(*sAddrs, ",")
+	if len(servAddrs) != 3 {
+		log.Fatal("bad argments")
+	}
 	runHTTPProbeResult()
 }
 
@@ -70,26 +80,31 @@ func generateKey() string {
 	return fmt.Sprintf("%08d", keyGlobal)
 }
 
-func checkResult(err error, result string, flag bool) bool {
+func checkResult(err error, result string, flag bool) error {
 	if flag == timeoutFlag {
 		if result == "pass" {
-			return false
+			return errors.New("timeout")
 		}
-		return true
+		return nil
 	}
 
 	if (err == nil && result == passResult) || (err != nil && result != passResult) {
-		return true
+		return nil
+	}
+	if err == nil && result != passResult {
+		return errors.New("bad request")
 	}
 
-	return false
+	return err
 }
 
-func probePass(w http.ResponseWriter, isPass, key, flag string) {
+func probePass(isPass string, doOp func() (client.KeyValue, error)) (*client.KeyValue, error) {
+	var kv client.KeyValue
+	var err error
 	resultCh := make(chan error, 1)
+
 	go func() {
-		DB := makeDBClient(*sAddr)
-		if err := DB.Put(key, flag+key); err != nil {
+		if kv, err = doOp(); err != nil {
 			resultCh <- err
 		}
 		resultCh <- nil
@@ -98,31 +113,27 @@ func probePass(w http.ResponseWriter, isPass, key, flag string) {
 	timeout := time.After(5 * time.Second)
 	select {
 	case ret := <-resultCh:
-		if checkResult(ret, isPass, !timeoutFlag) {
-			break
-		}
-		if ret == nil {
-			util.RespHTTPErr(w, http.StatusBadRequest, "")
-			return
-		}
-		util.RespHTTPErr(w, http.StatusInternalServerError, ret.Error())
-		return
+		return &kv, checkResult(ret, isPass, !timeoutFlag)
 	case <-timeout:
-		if checkResult(nil, isPass, timeoutFlag) {
-			break
-		}
-		util.RespHTTPErr(w, http.StatusInternalServerError, "timeout")
-		return
+		return &kv, checkResult(nil, isPass, timeoutFlag)
 	}
 
-	w.WriteHeader(http.StatusOK)
+	return nil, nil
+}
+
+func getResult(ret string) string {
+	if ret == "" {
+		ret = passResult
+	}
+
+	return ret
 }
 
 func probeStart(w http.ResponseWriter, r *http.Request) {
 	key := generateKey()
 	time.Sleep(5 * time.Second)
 
-	DB := makeDBClient(*sAddr)
+	DB := makeDBClient(servAddrs[0])
 	if err := DB.Put(key, "start"+key); err != nil {
 		util.RespHTTPErr(w, http.StatusInternalServerError, err.Error())
 		return
@@ -133,52 +144,103 @@ func probeStart(w http.ResponseWriter, r *http.Request) {
 
 func probeDropPort(w http.ResponseWriter, r *http.Request) {
 	log.Debug("start: probe drop port")
-	ret := r.FormValue("result")
+	ret := getResult(r.FormValue("result"))
 	timeout := r.FormValue("timeout")
 	t, err := strconv.Atoi(timeout)
 	if err != nil {
 		util.RespHTTPErr(w, http.StatusBadRequest, err.Error())
 	}
 	key := generateKey()
+	val := "dorpport" + key
 
 	time.Sleep(time.Duration(t) * time.Second)
-	probePass(w, ret, key, "dorpport")
+
+	DB := makeDBClient(servAddrs[0])
+	_, err = probePass(ret,
+		func() (client.KeyValue, error) {
+			return emptyKV, DB.Put(key, val)
+		})
+	if err != nil {
+		util.RespHTTPErr(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	DB = makeDBClient(servAddrs[2])
+	kv, err := probePass(ret,
+		func() (client.KeyValue, error) {
+			return DB.Get(key)
+		})
+	if err != nil {
+		util.RespHTTPErr(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if string(kv.ValueBytes()) != val {
+		err = errors.New("value unmatch")
+		if err = checkResult(err, ret, !timeoutFlag); err != nil {
+			util.RespHTTPErr(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+	}
+
+	w.WriteHeader(http.StatusOK)
 	log.Debug("end: probe drop port")
 }
 
 func probeRecoverPort(w http.ResponseWriter, r *http.Request) {
 	log.Debug("start: probe recover port")
-	ret := r.FormValue("result")
-	if ret == "" {
-		ret = passResult
-	}
+	ret := getResult(r.FormValue("result"))
 	key := generateKey()
+	time.Sleep(5 * time.Second)
 
-	probePass(w, ret, key, "recoverport")
+	DB := makeDBClient(servAddrs[0])
+	_, err := probePass(ret,
+		func() (client.KeyValue, error) {
+			return emptyKV, DB.Put(key, "recoverport"+key)
+		})
+	if err != nil {
+		util.RespHTTPErr(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 	log.Debug("end: probe recover port")
 }
 
 func probePause(w http.ResponseWriter, r *http.Request) {
 	log.Debug("start: probe pause")
-	ret := r.FormValue("result")
-	if ret == "" {
-		ret = passResult
-	}
+	ret := getResult(r.FormValue("result"))
 	key := generateKey()
 
-	probePass(w, ret, key, "pause")
+	DB := makeDBClient(servAddrs[0])
+	_, err := probePass(ret,
+		func() (client.KeyValue, error) {
+			return emptyKV, DB.Put(key, "pause"+key)
+		})
+	if err != nil {
+		util.RespHTTPErr(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 	log.Debug("end: probe pause")
 }
 
 func probeContinue(w http.ResponseWriter, r *http.Request) {
 	log.Debug("start: probe continue")
-	ret := r.FormValue("result")
-	if ret == "" {
-		ret = passResult
-	}
+	ret := getResult(r.FormValue("result"))
 	key := generateKey()
 
-	probePass(w, ret, key, "continue")
+	DB := makeDBClient(servAddrs[0])
+	_, err := probePass(ret,
+		func() (client.KeyValue, error) {
+			return emptyKV, DB.Put(key, "continue"+key)
+		})
+	if err != nil {
+		util.RespHTTPErr(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 	log.Debug("end: probe continue")
 }
 

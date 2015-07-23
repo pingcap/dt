@@ -109,9 +109,11 @@ func (inst *Instance) Pause() error {
 	}
 
 	arg := fmt.Sprintf("%s %d", pauseInstanceCmd, inst.pid)
-	if _, err := util.ExecCmd(arg, inst.logfile); err != nil {
+	cmd, err := util.ExecCmd(arg, inst.logfile)
+	if err != nil {
 		return errors.Trace(err)
 	}
+	cmd.Wait()
 	inst.state = instanceStatePaused
 
 	log.Warning("pause out:", ps())
