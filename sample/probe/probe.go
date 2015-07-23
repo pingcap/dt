@@ -137,7 +137,7 @@ func probeStart(w http.ResponseWriter, r *http.Request) {
 
 func probeDropPort(w http.ResponseWriter, r *http.Request) {
 	log.Debug("start: probe drop port")
-	ret := getValue(r, "result", "result")
+	ret := getValue(r, "result", "pass")
 	timeout := r.FormValue("timeout")
 	t, err := strconv.Atoi(timeout)
 	if err != nil {
@@ -181,7 +181,7 @@ func probeDropPort(w http.ResponseWriter, r *http.Request) {
 
 func probeRecoverPort(w http.ResponseWriter, r *http.Request) {
 	log.Debug("start: probe recover port")
-	ret := getValue(r, "result", "result")
+	ret := getValue(r, "result", "pass")
 	key := generateKey()
 	time.Sleep(5 * time.Second)
 
@@ -201,7 +201,7 @@ func probeRecoverPort(w http.ResponseWriter, r *http.Request) {
 
 func probePause(w http.ResponseWriter, r *http.Request) {
 	log.Debug("start: probe pause")
-	ret := getValue(r, "result", "result")
+	ret := getValue(r, "result", "pass")
 	key := generateKey()
 
 	DB := makeDBClient(servAddrs[0])
@@ -220,7 +220,7 @@ func probePause(w http.ResponseWriter, r *http.Request) {
 
 func probeContinue(w http.ResponseWriter, r *http.Request) {
 	log.Debug("start: probe continue")
-	ret := getValue(r, "result", "result")
+	ret := getValue(r, "result", "pass")
 	key := generateKey()
 
 	DB := makeDBClient(servAddrs[0])
