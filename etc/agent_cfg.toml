@@ -1,5 +1,4 @@
-title = "instance_agent"
 ip = "127.0.0.1"
 port = "54320"
 ctrl_addr = "127.0.0.1:54321"
-data_dir = "/tmp/test.out" 
+data_dir = "./dt/agent"

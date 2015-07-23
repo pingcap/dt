@@ -2,60 +2,65 @@ package util
 
 import (
 	"bytes"
-	"encoding/json"
-	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
-	"net/http"
-	"strings"
+	"os"
+	"os/exec"
+	"time"
 
-	"github.com/ngaut/log"
+	"github.com/juju/errors"
 )
 
-var ErrAddrInvalid = errors.New("invalid addr")
+func ExecCmd(arg string, w io.Writer) (*exec.Cmd, error) {
+	cmd := exec.Command("sh", "-c", arg)
+	cmd.Stdout = w
+	cmd.Stderr = w
 
-func ApiUrl(addr, action, query string) string {
-	if query != "" {
-		return fmt.Sprintf("http://%s/%s?%s", addr, action, query)
-	} else {
-		return fmt.Sprintf("http://%s/%s", addr, action)
-	}
+	return cmd, cmd.Start()
 }
 
-func HttpCall(url, method string, data interface{}) error {
-	log.Debug("start: httpCall, url:", url, "method:", method)
-	rw := &bytes.Buffer{}
-	if data != nil {
-		buf, err := json.Marshal(data)
-		if err != nil {
-			return err
+func GetGUID(key string) string {
+	t := time.Now().UnixNano()
+
+	return fmt.Sprintf("%d-%s", t, key)
+}
+
+func ReadFile(file string) ([]byte, error) {
+	b, err := ioutil.ReadFile(file)
+	if err != nil {
+		return nil, errors.Trace(err)
+	}
+
+	buf := bytes.Trim(b, "\n")
+
+	return buf, nil
+}
+
+func CreateLog(dir, file string) (*os.File, error) {
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return nil, errors.Trace(err)
+	}
+
+	path := fmt.Sprintf("%s/%s.log", dir, file)
+	f, err := os.Create(path)
+	if err != nil {
+		return nil, errors.Trace(err)
+	}
+
+	return f, nil
+}
+
+func CheckIsEmpty(strs ...string) bool {
+	return Contains("", strs)
+}
+
+func Contains(str string, strs []string) bool {
+	for _, s := range strs {
+		if s == str {
+			return true
 		}
-		rw.Write(buf)
-	}
-	req, err := http.NewRequest(method, url, rw)
-	if err != nil {
-		return err
 	}
 
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	msg, _ := ioutil.ReadAll(resp.Body)
-	if resp.StatusCode/100 == 2 {
-		return nil
-	}
-
-	return errors.New(fmt.Sprintf("error code: %s, msg: %s", resp.StatusCode, string(msg)))
-}
-
-func GetIpAndPort(addr string) (string, string, error) {
-	strSlice := strings.Split(addr, ":")
-	if len(strSlice) != 2 {
-		return "", "", ErrAddrInvalid
-	}
-
-	return strSlice[0], strSlice[1], nil
+	return false
 }

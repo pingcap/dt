@@ -1,18 +1,19 @@
 package controller
 
 import (
-	"errors"
-	"github.com/gorilla/mux"
-	"io"
+	"fmt"
 	"net/http"
 
+	"github.com/gorilla/mux"
+	"github.com/juju/errors"
 	"github.com/ngaut/log"
+	"github.com/pingcap/dt/pkg/util"
 )
 
-var ErrRegisterArgs = errors.New("invalid register args")
+var errRegisterArgs = errors.New("invalid register args")
 
-func runHttpServer(addr string, ctrl *Controller) {
-	log.Debug("start: runHttpServer")
+func runHTTPServer(addr string, ctrl *Controller) {
+	log.Debug("start: runHTTPServer")
 	m := mux.NewRouter()
 
 	m.HandleFunc("/api/agent/register", ctrl.apiRegisterAgent).Methods("POST", "PUT")
@@ -22,12 +23,11 @@ func runHttpServer(addr string, ctrl *Controller) {
 }
 
 func (ctrl *Controller) apiRegisterAgent(w http.ResponseWriter, r *http.Request) {
-	log.Debug("start: apiRegisterAgent")
 	agentAddr := r.FormValue("addr")
 
 	if agentAddr == "" {
-		w.WriteHeader(http.StatusInternalServerError)
-		io.WriteString(w, ErrRegisterArgs.Error())
+		util.RespHTTPErr(w, http.StatusInternalServerError,
+			fmt.Sprintf("shutdown agent failed, err:%v", errRegisterArgs))
 		return
 	}
 	log.Info("apiRegisterAgent, info:", agentAddr)
