@@ -113,12 +113,13 @@ func probePass(isPass string, doOp func() (client.KeyValue, error)) (*client.Key
 	return nil, nil
 }
 
-func getResult(ret string) string {
-	if ret == "" {
-		ret = passResult
+func getValue(r *http.Request, key, defaultVal string) string {
+	val := r.FormValue(key)
+	if val == "" {
+		val = defaultVal
 	}
 
-	return ret
+	return val
 }
 
 func probeStart(w http.ResponseWriter, r *http.Request) {
@@ -136,7 +137,7 @@ func probeStart(w http.ResponseWriter, r *http.Request) {
 
 func probeDropPort(w http.ResponseWriter, r *http.Request) {
 	log.Debug("start: probe drop port")
-	ret := getResult(r.FormValue("result"))
+	ret := getValue(r, "result", "result")
 	timeout := r.FormValue("timeout")
 	t, err := strconv.Atoi(timeout)
 	if err != nil {
@@ -180,7 +181,7 @@ func probeDropPort(w http.ResponseWriter, r *http.Request) {
 
 func probeRecoverPort(w http.ResponseWriter, r *http.Request) {
 	log.Debug("start: probe recover port")
-	ret := getResult(r.FormValue("result"))
+	ret := getValue(r, "result", "result")
 	key := generateKey()
 	time.Sleep(5 * time.Second)
 
@@ -200,7 +201,7 @@ func probeRecoverPort(w http.ResponseWriter, r *http.Request) {
 
 func probePause(w http.ResponseWriter, r *http.Request) {
 	log.Debug("start: probe pause")
-	ret := getResult(r.FormValue("result"))
+	ret := getValue(r, "result", "result")
 	key := generateKey()
 
 	DB := makeDBClient(servAddrs[0])
@@ -219,7 +220,7 @@ func probePause(w http.ResponseWriter, r *http.Request) {
 
 func probeContinue(w http.ResponseWriter, r *http.Request) {
 	log.Debug("start: probe continue")
-	ret := getResult(r.FormValue("result"))
+	ret := getValue(r, "result", "result")
 	key := generateKey()
 
 	DB := makeDBClient(servAddrs[0])
