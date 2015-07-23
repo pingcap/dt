@@ -22,8 +22,7 @@ var (
 )
 
 const (
-	timeoutFlag = true
-	passResult  = "pass"
+	passResult = "pass"
 )
 
 var (
@@ -80,14 +79,7 @@ func generateKey() string {
 	return fmt.Sprintf("%08d", keyGlobal)
 }
 
-func checkResult(err error, result string, flag bool) error {
-	if flag == timeoutFlag {
-		if result == "pass" {
-			return errors.New("timeout")
-		}
-		return nil
-	}
-
+func checkResult(err error, result string) error {
 	if (err == nil && result == passResult) || (err != nil && result != passResult) {
 		return nil
 	}
@@ -113,9 +105,9 @@ func probePass(isPass string, doOp func() (client.KeyValue, error)) (*client.Key
 	timeout := time.After(5 * time.Second)
 	select {
 	case ret := <-resultCh:
-		return &kv, checkResult(ret, isPass, !timeoutFlag)
+		return &kv, checkResult(ret, isPass)
 	case <-timeout:
-		return &kv, checkResult(nil, isPass, timeoutFlag)
+		return &kv, checkResult(errors.New("timeout"), isPass)
 	}
 
 	return nil, nil
@@ -176,7 +168,7 @@ func probeDropPort(w http.ResponseWriter, r *http.Request) {
 	}
 	if string(kv.ValueBytes()) != val {
 		err = errors.New("value unmatch")
-		if err = checkResult(err, ret, !timeoutFlag); err != nil {
+		if err = checkResult(err, ret); err != nil {
 			util.RespHTTPErr(w, http.StatusInternalServerError, err.Error())
 			return
 		}
