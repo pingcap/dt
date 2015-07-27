@@ -12,7 +12,7 @@ import (
 	"github.com/ngaut/log"
 )
 
-func ApiUrl(addr, action, query string) string {
+func JoinURL(addr, action, query string) string {
 	if query != "" {
 		return fmt.Sprintf("http://%s/%s?%s", addr, action, query)
 	} else {
@@ -35,6 +35,7 @@ func HTTPCall(url, method string, data interface{}) error {
 		return errors.Trace(err)
 	}
 
+	req.Header.Set("Connection", "close")
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return errors.Trace(err)

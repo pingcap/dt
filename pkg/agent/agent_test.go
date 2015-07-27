@@ -15,10 +15,11 @@ type TestAgent struct{}
 
 var _ = Suite(&TestAgent{})
 
-// TODO:
 func (s *TestAgent) SetUpSuite(c *C) {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 }
 
-// TODO:
+// TODO: implement
 func (s *TestAgent) TearDownSuite(c *C) {}
+
+// TODO: add tests

@@ -37,7 +37,7 @@ func (a *Agent) heartbeat() error {
 	agentAttr := make(url.Values)
 	agentAttr.Set("addr", a.Addr)
 
-	return util.HTTPCall(util.ApiUrl(a.CtrlAddr, "api/agent/register", agentAttr.Encode()), "POST", nil)
+	return util.HTTPCall(util.JoinURL(a.CtrlAddr, "api/agent/register", agentAttr.Encode()), "POST", nil)
 }
 
 func (a *Agent) Register() error {

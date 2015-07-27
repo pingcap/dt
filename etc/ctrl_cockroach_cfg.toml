@@ -7,9 +7,9 @@ instance_count = 3
 
 [[test_cmd]]
 cmd = "init"
-instances = ["server1"]
-args = "./cockroach init --stores=ssd=\"./db0\""
-probe = "http://127.0.0.1:9090/probe/server/init"
+instances = ["server1"] 
+args = "./cockroach init --stores=ssd=\"./db0\"" 
+probe = "http://127.0.0.1:9090/probe/server/init" 
 
 [[test_cmd]]
 cmd = "start"
@@ -27,7 +27,7 @@ probe = "http://127.0.0.1:9090/probe/server/init"
 cmd = "start"
 instances = ["server2"]
 dir = "./dt/instance"
-args = "nohup ./cockroach start --stores=ssd=\"./db1\" --addr=\":8081\" --gossip=\":8080,:8081,:8082\" &"
+args = "nohup ./cockroach start --stores=ssd=\"./db1\" --addr=\":8081\" --gossip=\":8080,:8081,:8082\" &" 
 probe = "http://127.0.0.1:9090/probe/server/start"
 
 [[test_cmd]]

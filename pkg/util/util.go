@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"path"
 	"time"
 
 	"github.com/juju/errors"
@@ -42,7 +43,7 @@ func CreateLog(dir, file string) (*os.File, error) {
 		return nil, errors.Trace(err)
 	}
 
-	path := fmt.Sprintf("%s/%s.log", dir, file)
+	path := path.Join(dir, file+".log")
 	f, err := os.Create(path)
 	if err != nil {
 		return nil, errors.Trace(err)
