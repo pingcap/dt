@@ -115,6 +115,7 @@ func probePass(isPass string, doOp func() (client.KeyValue, error)) (*client.Key
 
 func getValue(r *http.Request, key, defaultVal string) string {
 	val := r.FormValue(key)
+	log.Info("val", val)
 	if val == "" {
 		val = defaultVal
 	}
@@ -185,6 +186,7 @@ func probeRecoverPort(w http.ResponseWriter, r *http.Request) {
 	key := generateKey()
 	time.Sleep(5 * time.Second)
 
+	log.Info("ret", ret)
 	DB := makeDBClient(servAddrs[0])
 	_, err := probePass(ret,
 		func() (client.KeyValue, error) {
