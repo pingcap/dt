@@ -74,6 +74,27 @@ func (a *Agent) StopInstance() error {
 	return util.HTTPCall(util.JoinURL(a.Addr, "api/instance/stop", ""), "POST", nil)
 }
 
+func (a *Agent) DropPkgInstance(port, chain, percent, probe string) error {
+	attr := make(url.Values)
+	attr.Set("port", port)
+	attr.Set("chain", chain)
+	attr.Set("percent", percent)
+	attr.Set("probe", probe)
+
+	return util.HTTPCall(util.JoinURL(a.Addr, "api/instance/droppkg", attr.Encode()), "POST", nil)
+}
+
+func (a *Agent) LimitSpeedInstance(port, chain, unit, pkgs, probe string) error {
+	attr := make(url.Values)
+	attr.Set("port", port)
+	attr.Set("chain", chain)
+	attr.Set("unit", unit)
+	attr.Set("pkgs", pkgs)
+	attr.Set("probe", probe)
+
+	return util.HTTPCall(util.JoinURL(a.Addr, "api/instance/limitspeed", attr.Encode()), "POST", nil)
+}
+
 func (a *Agent) DropPortInstance(port, probe string) error {
 	attr := make(url.Values)
 	attr.Set("port", port)

@@ -3,6 +3,7 @@ package agent
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -22,6 +23,8 @@ func runHTTPServer(a *Agent) error {
 	m.HandleFunc("/api/instance/pause", inst.apiPause).Methods("Post", "Put")
 	m.HandleFunc("/api/instance/continue", inst.apiContinue).Methods("Post", "Put")
 	m.HandleFunc("/api/instance/stop", inst.apiStop).Methods("Post", "Put")
+	m.HandleFunc("/api/instance/droppkg", inst.apiDropPkg).Methods("Post", "Put")
+	m.HandleFunc("/api/instance/limitspeed", inst.apiLimitSeep).Methods("Post", "Put")
 	m.HandleFunc("/api/instance/dropport", inst.apiDropPort).Methods("Post", "Put")
 	m.HandleFunc("/api/instance/recoverport", inst.apiRecoverPort).Methods("Post", "Put")
 	m.HandleFunc("/api/instance/backupdata", inst.apiBackupData).Methods("Post", "Put")
@@ -166,6 +169,55 @@ func (inst *Instance) apiStop(w http.ResponseWriter, r *http.Request) {
 	if err := inst.Stop(); err != nil {
 		util.RespHTTPErr(w, http.StatusInternalServerError,
 			fmt.Sprintf("stop instance failed, err - %v", err))
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func (inst *Instance) apiDropPkg(w http.ResponseWriter, r *http.Request) {
+	port := r.FormValue("port")
+	chain := r.FormValue("chain")
+	percent, err := strconv.Atoi(r.FormValue("percent"))
+	if util.CheckIsEmpty(port, chain) || err != nil {
+		util.RespHTTPErr(w, http.StatusBadRequest,
+			fmt.Sprintf("err - %v", err))
+		return
+	}
+
+	if err := inst.DropPkg(chain, port, percent); err != nil {
+		util.RespHTTPErr(w, http.StatusInternalServerError,
+			fmt.Sprintf("drop instance port failed, err - %v", err))
+		return
+	}
+
+	if err := ProbeResult(r.FormValue("probe")); err != nil {
+		util.RespHTTPErr(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func (inst *Instance) apiLimitSeep(w http.ResponseWriter, r *http.Request) {
+	port := r.FormValue("port")
+	chain := r.FormValue("chain")
+	unit := r.FormValue("unit")
+	pkgs, err := strconv.Atoi(r.FormValue("pkgs"))
+	if util.CheckIsEmpty(port, chain, unit) || err != nil {
+		util.RespHTTPErr(w, http.StatusBadRequest,
+			fmt.Sprintf("err - %v", err))
+		return
+	}
+
+	if err := inst.LimitSpeed(chain, port, unit, pkgs); err != nil {
+		util.RespHTTPErr(w, http.StatusInternalServerError,
+			fmt.Sprintf("drop instance port failed, err - %v", err))
+		return
+	}
+
+	if err := ProbeResult(r.FormValue("probe")); err != nil {
+		util.RespHTTPErr(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 

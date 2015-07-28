@@ -13,6 +13,8 @@ const (
 	TestCmdContinue      = "continue"
 	TestCmdStop          = "stop"
 	TestCmdSleep         = "sleep"
+	TestCmdDropPkg       = "droppkg"
+	TestCmdLimitSeep     = "limitspeed"
 	TestCmdDropPort      = "dropport"
 	TestCmdRecoverPort   = "recoverport"
 	TestCmdCleanUpData   = "cleanup"
