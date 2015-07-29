@@ -21,10 +21,10 @@ const (
 )
 
 var (
-	errCfgInfoUnmatch        = errors.New("unmatch config info")
+	errUnmatchedCfgInfo      = errors.New("unmatched config info")
 	errAgentRegisterTimeout  = errors.New("register timeout")
 	errAgentHeartbeatTimeout = errors.New("heartbeat timeout")
-	errTestCmdUnmatch        = errors.New("unmatch test cmd kind")
+	errUnmatchedTestCmd      = errors.New("unmatched test cmd kind")
 )
 
 type Controller struct {
@@ -50,7 +50,7 @@ func NewController(cfg *Config) (*Controller, error) {
 		instanceCount += inst.Count
 	}
 	if cfg.InstanceCount != instanceCount {
-		return nil, errors.Trace(errCfgInfoUnmatch)
+		return nil, errors.Trace(errUnmatchedCfgInfo)
 	}
 
 	ctrl.agents = make(map[string]*client.Agent, cfg.InstanceCount)
@@ -187,7 +187,7 @@ func (ctrl *Controller) HandleFailure() error {
 func (ctrl *Controller) HandleCmd(cmd *TestCmd) error {
 	if (cmd.Name != util.TestCmdSleep && len(cmd.Instances) <= 0) ||
 		(cmd.Name == util.TestCmdSleep && len(cmd.Instances) > 0) {
-		return errors.Trace(errCfgInfoUnmatch)
+		return errors.Trace(errUnmatchedCfgInfo)
 	}
 
 	if cmd.Name == util.TestCmdSleep {
@@ -199,7 +199,7 @@ func (ctrl *Controller) HandleCmd(cmd *TestCmd) error {
 	for _, inst := range cmd.Instances {
 		agent, ok := ctrl.agents[inst]
 		if !ok {
-			return errors.Trace(errCfgInfoUnmatch)
+			return errors.Trace(errUnmatchedCfgInfo)
 		}
 		if err := DoCmd(cmd, agent, inst); err != nil {
 			return errors.Trace(err)
@@ -232,13 +232,13 @@ func DoCmd(cmd *TestCmd, agent *client.Agent, inst string) error {
 	case util.TestCmdDropPkg:
 		args := strings.Split(cmd.Args, argSplit)
 		if len(args) != 3 {
-			return errors.Trace(errCfgInfoUnmatch)
+			return errors.Trace(errUnmatchedCfgInfo)
 		}
 		err = agent.DropPkgInstance(args[0], args[1], args[2], cmd.Probe)
 	case util.TestCmdLimitSeep:
 		args := strings.Split(cmd.Args, argSplit)
 		if len(args) != 4 {
-			return errors.Trace(errCfgInfoUnmatch)
+			return errors.Trace(errUnmatchedCfgInfo)
 		}
 		err = agent.LimitSpeedInstance(args[0], args[1], args[2], args[3], cmd.Probe)
 	case util.TestCmdRecoverPort:
@@ -256,7 +256,7 @@ func DoCmd(cmd *TestCmd, agent *client.Agent, inst string) error {
 		}
 		time.Sleep(time.Duration(t) * time.Second)
 	default:
-		err = errTestCmdUnmatch
+		err = errUnmatchedTestCmd
 	}
 
 	if err != nil {
