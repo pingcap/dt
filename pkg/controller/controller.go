@@ -232,13 +232,15 @@ func DoCmd(cmd *TestCmd, agent *client.Agent, inst string) error {
 	case util.TestCmdDropPkg:
 		args := strings.Split(cmd.Args, argSplit)
 		if len(args) != 3 {
-			return errors.Trace(errUnmatchedCfgInfo)
+			err = errUnmatchedCfgInfo
+			break
 		}
 		err = agent.DropPkgInstance(args[0], args[1], args[2], cmd.Probe)
 	case util.TestCmdLimitSeep:
 		args := strings.Split(cmd.Args, argSplit)
 		if len(args) != 4 {
-			return errors.Trace(errUnmatchedCfgInfo)
+			err = errUnmatchedCfgInfo
+			break
 		}
 		err = agent.LimitSpeedInstance(args[0], args[1], args[2], args[3], cmd.Probe)
 	case util.TestCmdRecoverPort:
