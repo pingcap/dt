@@ -16,13 +16,15 @@ import (
 const (
 	agentInfoChanSize    = 20
 	agentRegisterTimeout = 300
+	// argument split
+	argSplit = "/"
 )
 
 var (
-	errCfgInfoUnmatch        = errors.New("unmatch config info")
+	errUnmatchedCfgInfo      = errors.New("unmatched config info")
 	errAgentRegisterTimeout  = errors.New("register timeout")
 	errAgentHeartbeatTimeout = errors.New("heartbeat timeout")
-	errTestCmdUnmatch        = errors.New("test cmd kind unmatch")
+	errUnmatchedTestCmd      = errors.New("unmatched test cmd kind")
 )
 
 type Controller struct {
@@ -48,7 +50,7 @@ func NewController(cfg *Config) (*Controller, error) {
 		instanceCount += inst.Count
 	}
 	if cfg.InstanceCount != instanceCount {
-		return nil, errors.Trace(errCfgInfoUnmatch)
+		return nil, errors.Trace(errUnmatchedCfgInfo)
 	}
 
 	ctrl.agents = make(map[string]*client.Agent, cfg.InstanceCount)
@@ -185,7 +187,7 @@ func (ctrl *Controller) HandleFailure() error {
 func (ctrl *Controller) HandleCmd(cmd *TestCmd) error {
 	if (cmd.Name != util.TestCmdSleep && len(cmd.Instances) <= 0) ||
 		(cmd.Name == util.TestCmdSleep && len(cmd.Instances) > 0) {
-		return errors.Trace(errCfgInfoUnmatch)
+		return errors.Trace(errUnmatchedCfgInfo)
 	}
 
 	if cmd.Name == util.TestCmdSleep {
@@ -197,7 +199,7 @@ func (ctrl *Controller) HandleCmd(cmd *TestCmd) error {
 	for _, inst := range cmd.Instances {
 		agent, ok := ctrl.agents[inst]
 		if !ok {
-			return errors.Trace(errCfgInfoUnmatch)
+			return errors.Trace(errUnmatchedCfgInfo)
 		}
 		if err := DoCmd(cmd, agent, inst); err != nil {
 			return errors.Trace(err)
@@ -208,67 +210,59 @@ func (ctrl *Controller) HandleCmd(cmd *TestCmd) error {
 }
 
 func DoCmd(cmd *TestCmd, agent *client.Agent, inst string) error {
+	var err error
 	log.Debug("start: docmd, cmd:", cmd.Name)
 	defer log.Debug("end: docmd")
+
 	switch strings.ToLower(cmd.Name) {
 	case util.TestCmdStart:
-		err := agent.StartInstance(cmd.Args, inst, cmd.Dir, cmd.Probe)
-		if err != nil {
-			return errors.Trace(err)
-		}
+		err = agent.StartInstance(cmd.Args, inst, cmd.Dir, cmd.Probe)
 	case util.TestCmdInit:
-		err := agent.SetInstance(cmd.Args, cmd.Probe)
-		if err != nil {
-			return errors.Trace(err)
-		}
+		err = agent.SetInstance(cmd.Args, cmd.Probe)
 	case util.TestCmdRestart:
-		err := agent.RestartInstance(cmd.Args, inst, cmd.Dir, cmd.Probe)
-		if err != nil {
-			return errors.Trace(err)
-		}
+		err = agent.RestartInstance(cmd.Args, inst, cmd.Dir, cmd.Probe)
 	case util.TestCmdPause:
-		if err := agent.PauseInstance(cmd.Probe); err != nil {
-			return errors.Trace(err)
-		}
+		err = agent.PauseInstance(cmd.Probe)
 	case util.TestCmdContinue:
-		if err := agent.ContinueInstance(cmd.Probe); err != nil {
-			return errors.Trace(err)
-		}
+		err = agent.ContinueInstance(cmd.Probe)
 	case util.TestCmdStop:
-		if err := agent.StopInstance(); err != nil {
-			return errors.Trace(err)
-		}
+		err = agent.StopInstance()
 	case util.TestCmdDropPort:
-		if err := agent.DropPortInstance(cmd.Args, cmd.Probe); err != nil {
-			return errors.Trace(err)
+		err = agent.DropPortInstance(cmd.Args, cmd.Probe)
+	case util.TestCmdDropPkg:
+		args := strings.Split(cmd.Args, argSplit)
+		if len(args) != 3 {
+			err = errUnmatchedCfgInfo
+			break
 		}
+		err = agent.DropPkgInstance(args[0], args[1], args[2], cmd.Probe)
+	case util.TestCmdLimitSeep:
+		args := strings.Split(cmd.Args, argSplit)
+		if len(args) != 4 {
+			err = errUnmatchedCfgInfo
+			break
+		}
+		err = agent.LimitSpeedInstance(args[0], args[1], args[2], args[3], cmd.Probe)
 	case util.TestCmdRecoverPort:
-		if err := agent.RecoverPortInstance(cmd.Args, cmd.Probe); err != nil {
-			return errors.Trace(err)
-		}
+		err = agent.RecoverPortInstance(cmd.Args, cmd.Probe)
 	case util.TestCmdShutdownAgent:
-		if err := agent.Shutdown(); err != nil {
-			return errors.Trace(err)
-		}
+		err = agent.Shutdown()
 	case util.TestCmdBackupData:
-		log.Info("backup, dir:", cmd.Dir)
-		if err := agent.BackupInstanceData(cmd.Dir); err != nil {
-			return errors.Trace(err)
-		}
+		err = agent.BackupInstanceData(cmd.Dir)
 	case util.TestCmdCleanUpData:
-		if err := agent.CleanUpInstanceData(); err != nil {
-			return errors.Trace(err)
-		}
+		err = agent.CleanUpInstanceData()
 	case util.TestCmdSleep:
-		log.Info("sleep", cmd.Args)
 		t, err := strconv.Atoi(cmd.Args)
 		if err != nil {
 			return errors.Trace(err)
 		}
 		time.Sleep(time.Duration(t) * time.Second)
 	default:
-		return errors.Trace(errTestCmdUnmatch)
+		err = errUnmatchedTestCmd
 	}
 
+	if err != nil {
+		return errors.Trace(err)
+	}
 	return nil
 }

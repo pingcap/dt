@@ -22,6 +22,7 @@ func JoinURL(addr, action, query string) string {
 
 func HTTPCall(url, method string, data interface{}) error {
 	log.Debug("start: httpCall, url:", url, "method:", method)
+	defer log.Debug("end: httpCall")
 	rw := &bytes.Buffer{}
 	if data != nil {
 		buf, err := json.Marshal(data)

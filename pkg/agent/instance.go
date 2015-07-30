@@ -174,19 +174,17 @@ func (inst *Instance) CleanUpData() error {
 }
 
 func (inst *Instance) DropPort(port string) error {
-	if err := DropPort(port); err != nil {
-		return errors.Trace(err)
-	}
+	return DropPort(port)
+}
 
-	return nil
+func (inst *Instance) DropPkg(chain, port string, percent int) error {
+	return DropPkg(chain, port, percent)
+}
+
+func (inst *Instance) LimitSpeed(chain, port, unit string, pkgs int) error {
+	return LimitSpeed(chain, port, unit, pkgs)
 }
 
 func (inst *Instance) RecoverPort(port string) error {
-	if err := RecoverPort(port); err != nil {
-		return errors.Trace(err)
-	}
-
-	//log.Warning("recover port out:", listIPTables())
-
-	return nil
+	return RecoverPort(port)
 }
