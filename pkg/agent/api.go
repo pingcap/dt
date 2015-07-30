@@ -172,6 +172,11 @@ func (inst *Instance) apiStop(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if err := ProbeResult(r.FormValue("probe")); err != nil {
+		util.RespHTTPErr(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
 	w.WriteHeader(http.StatusOK)
 }
 
@@ -181,7 +186,7 @@ func (inst *Instance) apiDropPkg(w http.ResponseWriter, r *http.Request) {
 	percent, err := strconv.Atoi(r.FormValue("percent"))
 	if util.CheckIsEmpty(port, chain) || err != nil {
 		util.RespHTTPErr(w, http.StatusBadRequest,
-			fmt.Sprintf("err - %v", err))
+			fmt.Sprintf("%v", err))
 		return
 	}
 
@@ -206,7 +211,7 @@ func (inst *Instance) apiLimitSeep(w http.ResponseWriter, r *http.Request) {
 	pkgs, err := strconv.Atoi(r.FormValue("pkgs"))
 	if util.CheckIsEmpty(port, chain, unit) || err != nil {
 		util.RespHTTPErr(w, http.StatusBadRequest,
-			fmt.Sprintf("err - %v", err))
+			fmt.Sprintf("%v", err))
 		return
 	}
 
