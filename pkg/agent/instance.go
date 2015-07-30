@@ -174,6 +174,7 @@ func (inst *Instance) CleanUpData() error {
 }
 
 func (inst *Instance) DropPort(port string) error {
+	log.Warning("dropport")
 	return DropPort(port)
 }
 
@@ -186,5 +187,6 @@ func (inst *Instance) LimitSpeed(chain, port, unit string, pkgs int) error {
 }
 
 func (inst *Instance) RecoverPort(port string) error {
+	log.Warning("recoverport")
 	return RecoverPort(port)
 }
