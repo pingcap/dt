@@ -1,8 +1,17 @@
 #!/bin/bash
-echo "start a controller"
-nohup ../bin/ctrl -role=controller -cfg=../etc/ctrl_cockroach_cfg.toml &
-echo "done"
+count=$1
 
-echo "sleep 3s"
-sleep 3
-tail controller.log -f 
+i=0
+while ((i<$count))
+do
+	echo "start a controller, no."$i
+	nohup ../bin/ctrl -role=controller -cfg=../etc/ctrl_cockroach_cfg.toml &
+	sleep 3
+	tail controller.log -f 
+
+	sleep 100
+	echo "done"
+	let ++i
+done
+
+echo "end"
