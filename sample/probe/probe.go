@@ -3,10 +3,12 @@ package main
 import (
 	"flag"
 	"fmt"
+	"math/rand"
 	"net/http"
 	"runtime"
 	"strconv"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/cockroachdb/cockroach/client"
@@ -26,8 +28,8 @@ const (
 )
 
 var (
-	keyGlobal = 1
-	emptyKV   = client.KeyValue{}
+	keyGlobal int64 = 1
+	emptyKV         = client.KeyValue{}
 	servAddrs []string
 )
 
@@ -60,12 +62,12 @@ func runHTTPProbeResult() {
 	m := mux.NewRouter()
 	m.HandleFunc("/probe/server/start", probeStart)
 	m.HandleFunc("/probe/server/init", probeTest)
-	m.HandleFunc("/probe/server/restart", probeTest)
-	m.HandleFunc("/probe/server/dropport", probeDropPort)
+	m.HandleFunc("/probe/server/restart", probeRestart)
+	m.HandleFunc("/probe/server/dropport", probeDrop)
 	m.HandleFunc("/probe/server/recoverport", probeRecoverPort)
 	m.HandleFunc("/probe/server/pause", probePause)
 	m.HandleFunc("/probe/server/continue", probeContinue)
-	m.HandleFunc("/probe/server/stop", probeTest)
+	m.HandleFunc("/probe/server/stop", probeDrop)
 
 	http.Handle("/", m)
 	if err := http.ListenAndServe(*addr, nil); err != nil {
@@ -73,10 +75,12 @@ func runHTTPProbeResult() {
 	}
 }
 
-func generateKey() string {
-	keyGlobal++
+func getCurrentKey() string {
+	return fmt.Sprintf("%08d", atomic.LoadInt64(&keyGlobal))
+}
 
-	return fmt.Sprintf("%08d", keyGlobal)
+func generateKey() string {
+	return fmt.Sprintf("%08d", atomic.AddInt64(&keyGlobal, 1))
 }
 
 func checkResult(err error, result string) error {
@@ -107,6 +111,7 @@ func probePass(isPass string, doOp func() (client.KeyValue, error)) (*client.Key
 	case ret := <-resultCh:
 		return &kv, checkResult(ret, isPass)
 	case <-timeout:
+		log.Warning("timeout:", isPass)
 		return &kv, checkResult(errors.New("timeout"), isPass)
 	}
 
@@ -124,79 +129,59 @@ func getValue(r *http.Request, key, defaultVal string) string {
 }
 
 func probeStart(w http.ResponseWriter, r *http.Request) {
-	key := generateKey()
 	time.Sleep(5 * time.Second)
+	ret := getValue(r, "result", "pass")
 
-	DB := makeDBClient(servAddrs[0])
-	if err := DB.Put(key, "start"+key); err != nil {
+	if err := putProbe(0, ret, "start", 5); err != nil {
 		util.RespHTTPErr(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-
 	w.WriteHeader(http.StatusOK)
 }
 
-func probeDropPort(w http.ResponseWriter, r *http.Request) {
-	log.Debug("start: probe drop port")
+func probeDrop(w http.ResponseWriter, r *http.Request) {
+	log.Debug("start: probe drop")
 	ret := getValue(r, "result", "pass")
 	timeout := r.FormValue("timeout")
 	t, err := strconv.Atoi(timeout)
 	if err != nil {
 		util.RespHTTPErr(w, http.StatusBadRequest, err.Error())
 	}
-	key := generateKey()
-	val := "dorpport" + key
-
 	time.Sleep(time.Duration(t) * time.Second)
 
-	DB := makeDBClient(servAddrs[0])
-	_, err = probePass(ret,
-		func() (client.KeyValue, error) {
-			return emptyKV, DB.Put(key, val)
-		})
-	if err != nil {
+	if err = putProbe(0, ret, "drop", 1); err != nil {
 		util.RespHTTPErr(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	DB = makeDBClient(servAddrs[2])
-	kv, err := probePass(ret,
-		func() (client.KeyValue, error) {
-			return DB.Get(key)
-		})
-	if err != nil {
+	currKey := getCurrentKey()
+	if err = getProbe(2, ret, currKey, "drop"+currKey); err != nil {
 		util.RespHTTPErr(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	if string(kv.ValueBytes()) != val {
-		err = errors.New("value unmatch")
-		if err = checkResult(err, ret); err != nil {
-			util.RespHTTPErr(w, http.StatusInternalServerError, err.Error())
-			return
-		}
-	}
-
 	w.WriteHeader(http.StatusOK)
-	log.Debug("end: probe drop port")
+	log.Debug("end: probe drop")
 }
 
 func probeRecoverPort(w http.ResponseWriter, r *http.Request) {
 	log.Debug("start: probe recover port")
-	ret := getValue(r, "result", "pass")
-	key := generateKey()
 	time.Sleep(5 * time.Second)
+	ret := getValue(r, "result", "pass")
 
-	log.Info("ret", ret)
-	DB := makeDBClient(servAddrs[0])
-	_, err := probePass(ret,
-		func() (client.KeyValue, error) {
-			return emptyKV, DB.Put(key, "recoverport"+key)
-		})
-	if err != nil {
+	if err := putProbe(0, ret, "recoverport", -1); err != nil {
 		util.RespHTTPErr(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
+	currKey := getCurrentKey()
+	if err := getProbe(0, ret, currKey, "recoverport"+currKey); err != nil {
+		util.RespHTTPErr(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if err := getProbe(2, ret, currKey, "recoverport"+currKey); err != nil {
+		util.RespHTTPErr(w, http.StatusInternalServerError, err.Error())
+		return
+	}
 	w.WriteHeader(http.StatusOK)
 	log.Debug("end: probe recover port")
 }
@@ -204,39 +189,100 @@ func probeRecoverPort(w http.ResponseWriter, r *http.Request) {
 func probePause(w http.ResponseWriter, r *http.Request) {
 	log.Debug("start: probe pause")
 	ret := getValue(r, "result", "pass")
-	key := generateKey()
 
-	DB := makeDBClient(servAddrs[0])
-	_, err := probePass(ret,
-		func() (client.KeyValue, error) {
-			return emptyKV, DB.Put(key, "pause"+key)
-		})
-	if err != nil {
+	if err := putProbe(0, ret, "pause", 1); err != nil {
 		util.RespHTTPErr(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-
 	w.WriteHeader(http.StatusOK)
 	log.Debug("end: probe pause")
 }
 
 func probeContinue(w http.ResponseWriter, r *http.Request) {
 	log.Debug("start: probe continue")
+	time.Sleep(3 * time.Second)
 	ret := getValue(r, "result", "pass")
-	key := generateKey()
+	currKey := getCurrentKey()
 
-	DB := makeDBClient(servAddrs[0])
-	_, err := probePass(ret,
-		func() (client.KeyValue, error) {
-			return emptyKV, DB.Put(key, "continue"+key)
-		})
-	if err != nil {
+	if err := getProbe(0, ret, currKey, "pause"+currKey); err != nil {
+		util.RespHTTPErr(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	if err := putProbe(0, ret, "continue", -1); err != nil {
+		util.RespHTTPErr(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	currKey = getCurrentKey()
+	if err := getProbe(2, ret, currKey, "continue"+currKey); err != nil {
+		util.RespHTTPErr(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	log.Debug("end: probe continue")
+}
+
+func probeRestart(w http.ResponseWriter, r *http.Request) {
+	log.Debug("start: probe restart")
+	time.Sleep(25 * time.Second)
+	ret := getValue(r, "result", "pass")
+
+	if err := putProbe(0, ret, "restart", -1); err != nil {
+		util.RespHTTPErr(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	currKey := getCurrentKey()
+	if err := getProbe(2, ret, currKey, "restart"+currKey); err != nil {
 		util.RespHTTPErr(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
-	log.Debug("end: probe continue")
+	log.Debug("end: probe restart")
+}
+
+func getProbe(servNum int, ret, key, val string) error {
+	DB := makeDBClient(servAddrs[servNum])
+	kv, err := probePass(ret,
+		func() (client.KeyValue, error) {
+			return DB.Get(key)
+		})
+	if err != nil {
+		return err
+	}
+
+	if string(kv.ValueBytes()) != val {
+		err = errors.New("value unmatch")
+		err = checkResult(err, ret)
+	}
+
+	log.Info("end: get, key:", key, "val:", val, "curr val:", string(kv.ValueBytes()))
+	return err
+}
+
+func putProbe(servNum int, ret, tag string, count int) error {
+	var err error
+	if count < 0 {
+		rand := rand.New(rand.NewSource(time.Now().UnixNano()))
+		count = int(rand.Int63n(100))
+	}
+
+	DB := makeDBClient(servAddrs[servNum])
+	for i := 0; i < count; i++ {
+		key := generateKey()
+		_, err = probePass(ret,
+			func() (client.KeyValue, error) {
+				return emptyKV, DB.Put(key, tag+key)
+			})
+		if err != nil {
+			break
+		}
+	}
+
+	log.Info("end: put, keys:", count)
+	return err
 }
 
 func probeTest(w http.ResponseWriter, r *http.Request) {
