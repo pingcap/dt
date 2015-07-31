@@ -226,7 +226,7 @@ func DoCmd(cmd *TestCmd, agent *client.Agent, inst string) error {
 	case util.TestCmdContinue:
 		err = agent.ContinueInstance(cmd.Probe)
 	case util.TestCmdStop:
-		err = agent.StopInstance()
+		err = agent.StopInstance(cmd.Probe)
 	case util.TestCmdDropPort:
 		err = agent.DropPortInstance(cmd.Args, cmd.Probe)
 	case util.TestCmdDropPkg:

@@ -9,7 +9,7 @@ import (
 )
 
 func DropPkg(chain, port string, percent int) error {
-	cmdStr := fmt.Sprintf("sudo iptables -A %s -p tcp --dport %s -m statistic --mode random --probability %f -j DROP",
+	cmdStr := fmt.Sprintf("sudo iptables -A %s -p tcp --dport %s -m statistic --mode random --probability %f -j REJECT",
 		chain, port, float32(percent)/100)
 	cmd, err := util.ExecCmd(cmdStr, os.Stdout)
 	if err != nil {

@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"net"
 	"net/http"
+	"time"
 
 	"github.com/juju/errors"
 	"github.com/ngaut/log"
@@ -20,24 +22,42 @@ func JoinURL(addr, action, query string) string {
 	}
 }
 
-func HTTPCall(url, method string, data interface{}) error {
-	log.Debug("start: httpCall, url:", url, "method:", method)
-	defer log.Debug("end: httpCall")
+func GetClient(timeout time.Duration) *http.Client {
+	dial := (&net.Dialer{Timeout: timeout * time.Second}).Dial
+
+	return &http.Client{Transport: &http.Transport{Dial: dial}}
+}
+
+func GetRequest(url, method string, data interface{}) (*http.Request, error) {
 	rw := &bytes.Buffer{}
 	if data != nil {
 		buf, err := json.Marshal(data)
 		if err != nil {
-			return errors.Trace(err)
+			return nil, errors.Trace(err)
 		}
 		rw.Write(buf)
 	}
+
 	req, err := http.NewRequest(method, url, rw)
+	if err != nil {
+		return nil, errors.Trace(err)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Connection", "close")
+
+	return req, nil
+}
+
+func HTTPCall(url, method string, data interface{}) error {
+	log.Debug("start: HTTPCall, url:", url, "method:", method)
+
+	req, err := GetRequest(url, method, data)
 	if err != nil {
 		return errors.Trace(err)
 	}
 
-	req.Header.Set("Connection", "close")
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := GetClient(HTTPClientTimeout).Do(req)
 	if err != nil {
 		return errors.Trace(err)
 	}
