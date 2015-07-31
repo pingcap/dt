@@ -23,11 +23,9 @@ func JoinURL(addr, action, query string) string {
 }
 
 func GetClient(timeout time.Duration) *http.Client {
-	return &http.Client{Transport: &http.Transport{
-		Dial: (&net.Dialer{
-			Timeout: timeout * time.Second,
-		}).Dial,
-	}}
+	dial := (&net.Dialer{Timeout: timeout * time.Second}).Dial
+
+	return &http.Client{Transport: &http.Transport{Dial: dial}}
 }
 
 func GetRequest(url, method string, data interface{}) (*http.Request, error) {
@@ -59,7 +57,7 @@ func HTTPCall(url, method string, data interface{}) error {
 		return errors.Trace(err)
 	}
 
-	resp, err := GetClient(10).Do(req)
+	resp, err := GetClient(HTTPClientTimeout).Do(req)
 	if err != nil {
 		return errors.Trace(err)
 	}

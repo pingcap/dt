@@ -26,3 +26,8 @@ const (
 const (
 	HeartbeatIntervalSec = time.Second
 )
+
+//HTTP
+const (
+	HTTPClientTimeout = 10 * time.Second
+)

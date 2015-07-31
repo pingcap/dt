@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"os"
 	"runtime"
-	//	"sync"
+	"sync"
 	"time"
 
 	"github.com/pingcap/dt/pkg/util"
@@ -47,32 +47,32 @@ func testNet(w http.ResponseWriter, r *http.Request) {
 }
 
 // TODO: test or code has problems, still need to think it over
-//func (s *TestNet) TestLimitSpeed(c *C) {
-//	total := 20
-//	pkgs := 5
-//	failed := 0
-//	unit := "second"
-//	addr := "127.0.0.1:" + port
-//
-//	err := LimitSpeed("INPUT", port, unit, pkgs)
-//	c.Assert(err, IsNil)
-//
-//	wg := sync.WaitGroup{}
-//	data := make([]byte, 1500)
-//	for i := 0; i < total; i++ {
-//		wg.Add(1)
-//		go func(f *int) {
-//			err := util.HTTPCall(util.JoinURL(addr, "test/net", ""), "POST", data)
-//			if err != nil {
-//				*f++
-//			}
-//			wg.Done()
-//		}(&failed)
-//	}
-//	wg.Wait()
-//	c.Assert(failed, Equals, total-pkgs)
-//}
-//
+func (s *TestNet) TestLimitSpeed(c *C) {
+	c.Skip("This test need to think again")
+	total := 20
+	pkgs := 5
+	failed := 0
+	unit := "second"
+	addr := "127.0.0.1:" + port
+
+	err := LimitSpeed("INPUT", port, unit, pkgs)
+	c.Assert(err, IsNil)
+
+	wg := sync.WaitGroup{}
+	data := make([]byte, 1500)
+	for i := 0; i < total; i++ {
+		wg.Add(1)
+		go func(f *int) {
+			err := util.HTTPCall(util.JoinURL(addr, "test/net", ""), "POST", data)
+			if err != nil {
+				*f++
+			}
+			wg.Done()
+		}(&failed)
+	}
+	wg.Wait()
+	c.Assert(failed, Equals, total-pkgs)
+}
 
 func (s *TestNet) TestDropPkg(c *C) {
 	failed := 0
