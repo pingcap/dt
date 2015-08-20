@@ -244,8 +244,8 @@ func DoCmd(cmd *TestCmd, agent *client.Agent, inst string) error {
 		err = agent.Shutdown()
 	case util.TestCmdBackupData:
 		err = agent.BackupInstanceData(cmd.Dir)
-	case util.TestCmdCleanUpData:
-		err = agent.CleanUpInstanceData()
+	case util.TestCmdCleanupData:
+		err = agent.CleanupInstanceData()
 	case util.TestCmdSleep:
 		t, err := strconv.Atoi(cmd.Args)
 		if err != nil {

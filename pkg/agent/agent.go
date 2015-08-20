@@ -100,7 +100,7 @@ func (a *Agent) BackupData(path string) error {
 	return nil
 }
 
-func (a *Agent) CleanUpData() error {
+func (a *Agent) CleanupData() error {
 	arg := fmt.Sprintf("%s %s", cleanUpInstanceDataCmd, a.DataDir)
 	if _, err := util.ExecCmd(arg, a.inst.logfile); err != nil {
 		return errors.Trace(err)

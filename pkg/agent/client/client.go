@@ -64,7 +64,7 @@ func (a *Agent) BackupInstanceData(dir string) error {
 	return util.HTTPCall(util.JoinURL(a.Addr, "api/instance/backupdata", attr.Encode()), "POST", nil)
 }
 
-func (a *Agent) CleanUpInstanceData() error {
+func (a *Agent) CleanupInstanceData() error {
 	return util.HTTPCall(util.JoinURL(a.Addr, "api/instance/cleanupdata", ""), "POST", nil)
 }
 

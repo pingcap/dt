@@ -28,7 +28,7 @@ func runHTTPServer(a *Agent) error {
 	m.HandleFunc("/api/instance/dropport", inst.apiDropPort).Methods("Post", "Put")
 	m.HandleFunc("/api/instance/recoverport", inst.apiRecoverPort).Methods("Post", "Put")
 	m.HandleFunc("/api/instance/backupdata", a.apiBackupData).Methods("Post", "Put")
-	m.HandleFunc("/api/instance/cleanupdata", a.apiCleanUpData).Methods("Post", "Put")
+	m.HandleFunc("/api/instance/cleanupdata", a.apiCleanupData).Methods("Post", "Put")
 	m.HandleFunc("/api/agent/shutdown", a.apiShutdown).Methods("Post", "Put")
 
 	http.Handle("/", m)
@@ -259,8 +259,8 @@ func (a *Agent) apiBackupData(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func (a *Agent) apiCleanUpData(w http.ResponseWriter, r *http.Request) {
-	if err := a.CleanUpData(); err != nil {
+func (a *Agent) apiCleanupData(w http.ResponseWriter, r *http.Request) {
+	if err := a.CleanupData(); err != nil {
 		util.RespHTTPErr(w, http.StatusInternalServerError,
 			fmt.Sprintf("clean up instance data failed, err - %v", err))
 		return

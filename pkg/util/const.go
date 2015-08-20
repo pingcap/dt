@@ -17,7 +17,7 @@ const (
 	TestCmdLimitSeep     = "limitspeed"
 	TestCmdDropPort      = "dropport"
 	TestCmdRecoverPort   = "recoverport"
-	TestCmdCleanUpData   = "cleanup"
+	TestCmdCleanupData   = "cleanup"
 	TestCmdBackupData    = "backup"
 	TestCmdShutdownAgent = "shutdown"
 )
