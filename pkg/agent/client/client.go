@@ -25,20 +25,18 @@ func (a *Agent) SetInstance(cmd, probe string) error {
 	return util.HTTPCall(util.JoinURL(a.Addr, "api/instance/set", attr.Encode()), "POST", nil)
 }
 
-func (a *Agent) StartInstance(cmd, instName, dir, probe string) error {
+func (a *Agent) StartInstance(cmd, instName, probe string) error {
 	attr := make(url.Values)
 	attr.Set("cmd", cmd)
-	attr.Set("dir", dir)
 	attr.Set("probe", probe)
 	attr.Set("name", instName)
 
 	return util.HTTPCall(util.JoinURL(a.Addr, "api/instance/start", attr.Encode()), "POST", nil)
 }
 
-func (a *Agent) RestartInstance(cmd, instName, dir, probe string) error {
+func (a *Agent) RestartInstance(cmd, instName, probe string) error {
 	attr := make(url.Values)
 	attr.Set("cmd", cmd)
-	attr.Set("dir", dir)
 	attr.Set("probe", probe)
 	attr.Set("name", instName)
 

@@ -14,6 +14,7 @@ type Agent struct {
 	IP       string
 	Addr     string
 	CtrlAddr string
+	DataDir  string
 
 	inst   *Instance
 	exitCh chan error
@@ -29,6 +30,7 @@ func NewAgent(cfg *Config) (*Agent, error) {
 		IP:       cfg.IP,
 		Addr:     fmt.Sprintf("%s:%s", cfg.IP, cfg.Port),
 		CtrlAddr: cfg.CtrlAddr,
+		DataDir:  cfg.DataDir,
 		inst:     NewInstance(f),
 		exitCh:   make(chan error, 1)}, nil
 }
@@ -64,6 +66,7 @@ func (a *Agent) Heartbeat() {
 		case <-t.C:
 			if err := a.heartbeat(); err != nil {
 				log.Warning("heartbeat failed, err - ", err)
+				break
 			}
 			log.Debug("heartbeat")
 		case <-a.exitCh:
@@ -83,6 +86,24 @@ func (a *Agent) Start() error {
 		if err != nil {
 			return errors.Trace(err)
 		}
+	}
+
+	return nil
+}
+
+func (a *Agent) BackupData(path string) error {
+	arg := fmt.Sprintf("%s %s %s", backupInstanceDataCmd, a.DataDir, path)
+	if _, err := util.ExecCmd(arg, a.inst.logfile); err != nil {
+		return errors.Trace(err)
+	}
+
+	return nil
+}
+
+func (a *Agent) CleanUpData() error {
+	arg := fmt.Sprintf("%s %s", cleanUpInstanceDataCmd, a.DataDir)
+	if _, err := util.ExecCmd(arg, a.inst.logfile); err != nil {
+		return errors.Trace(err)
 	}
 
 	return nil
