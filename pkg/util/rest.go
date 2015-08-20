@@ -23,7 +23,7 @@ func JoinURL(addr, action, query string) string {
 }
 
 func GetClient(timeout time.Duration) *http.Client {
-	dial := (&net.Dialer{Timeout: timeout * time.Second}).Dial
+	dial := (&net.Dialer{Timeout: timeout}).Dial
 
 	return &http.Client{Transport: &http.Transport{Dial: dial}}
 }
