@@ -243,8 +243,8 @@ func probeRestart(w http.ResponseWriter, r *http.Request) {
 	log.Debug("end: probe restart")
 }
 
-func getProbe(servNum int, ret, key, val string) error {
-	DB := makeDBClient(servAddrs[servNum])
+func getProbe(servID int, ret, key, val string) error {
+	DB := makeDBClient(servAddrs[servID])
 	kv, err := probePass(ret,
 		func() (client.KeyValue, error) {
 			return DB.Get(key)
@@ -262,14 +262,14 @@ func getProbe(servNum int, ret, key, val string) error {
 	return err
 }
 
-func putProbe(servNum int, ret, tag string, count int) error {
+func putProbe(servID int, ret, tag string, count int) error {
 	var err error
 	if count < 0 {
 		rand := rand.New(rand.NewSource(time.Now().UnixNano()))
-		count = int(rand.Int63n(100))
+		count = int(rand.Int63n(100) + 1)
 	}
 
-	DB := makeDBClient(servAddrs[servNum])
+	DB := makeDBClient(servAddrs[servID])
 	for i := 0; i < count; i++ {
 		key := generateKey()
 		_, err = probePass(ret,
