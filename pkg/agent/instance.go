@@ -29,7 +29,6 @@ const (
 type Instance struct {
 	pid     int
 	state   string
-	dataDir string
 	logfile *os.File
 	cmd     *exec.Cmd
 }
@@ -108,8 +107,8 @@ func (inst *Instance) Pause() error {
 		return nil
 	}
 
-	arg := fmt.Sprintf("%s %d", pauseInstanceCmd, inst.pid)
-	cmd, err := util.ExecCmd(arg, inst.logfile)
+	args := fmt.Sprintf("%s %d", pauseInstanceCmd, inst.pid)
+	cmd, err := util.ExecCmd(args, inst.logfile)
 	if err != nil {
 		return errors.Trace(err)
 	}
@@ -126,8 +125,8 @@ func (inst *Instance) Continue() error {
 		return nil
 	}
 
-	arg := fmt.Sprintf("%s %d", continueInstanceCmd, inst.pid)
-	if _, err := util.ExecCmd(arg, inst.logfile); err != nil {
+	args := fmt.Sprintf("%s %d", continueInstanceCmd, inst.pid)
+	if _, err := util.ExecCmd(args, inst.logfile); err != nil {
 		return errors.Trace(err)
 	}
 	inst.state = instanceStateStarted
@@ -142,8 +141,8 @@ func (inst *Instance) Stop() error {
 		return nil
 	}
 
-	arg := fmt.Sprintf("%s %d", stopInstanceCmd, inst.pid)
-	cmd, err := util.ExecCmd(arg, inst.logfile)
+	args := fmt.Sprintf("%s %d", stopInstanceCmd, inst.pid)
+	cmd, err := util.ExecCmd(args, inst.logfile)
 	if err != nil {
 		return errors.Trace(err)
 	}
@@ -151,24 +150,6 @@ func (inst *Instance) Stop() error {
 
 	inst.state = instanceStateStopped
 	log.Warning("stop out:", ps())
-
-	return nil
-}
-
-func (inst *Instance) BackupData(path string) error {
-	arg := fmt.Sprintf("%s %s %s", backupInstanceDataCmd, inst.dataDir, path)
-	if _, err := util.ExecCmd(arg, inst.logfile); err != nil {
-		return errors.Trace(err)
-	}
-
-	return nil
-}
-
-func (inst *Instance) CleanUpData() error {
-	arg := fmt.Sprintf("%s %s", cleanUpInstanceDataCmd, inst.dataDir)
-	if _, err := util.ExecCmd(arg, inst.logfile); err != nil {
-		return errors.Trace(err)
-	}
 
 	return nil
 }

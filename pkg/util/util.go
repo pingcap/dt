@@ -13,8 +13,8 @@ import (
 	"github.com/juju/errors"
 )
 
-func ExecCmd(arg string, w io.Writer) (*exec.Cmd, error) {
-	cmd := exec.Command("sh", "-c", arg)
+func ExecCmd(args string, w io.Writer) (*exec.Cmd, error) {
+	cmd := exec.Command("sh", "-c", args)
 	cmd.Stdout = w
 	cmd.Stderr = w
 

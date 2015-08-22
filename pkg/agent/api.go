@@ -27,8 +27,8 @@ func runHTTPServer(a *Agent) error {
 	m.HandleFunc("/api/instance/limitspeed", inst.apiLimitSeep).Methods("Post", "Put")
 	m.HandleFunc("/api/instance/dropport", inst.apiDropPort).Methods("Post", "Put")
 	m.HandleFunc("/api/instance/recoverport", inst.apiRecoverPort).Methods("Post", "Put")
-	m.HandleFunc("/api/instance/backupdata", inst.apiBackupData).Methods("Post", "Put")
-	m.HandleFunc("/api/instance/cleanupdata", inst.apiCleanUpData).Methods("Post", "Put")
+	m.HandleFunc("/api/instance/backupdata", a.apiBackupData).Methods("Post", "Put")
+	m.HandleFunc("/api/instance/cleanupdata", a.apiCleanupData).Methods("Post", "Put")
 	m.HandleFunc("/api/agent/shutdown", a.apiShutdown).Methods("Post", "Put")
 
 	http.Handle("/", m)
@@ -45,8 +45,7 @@ func (inst *Instance) apiStart(w http.ResponseWriter, r *http.Request) {
 	log.Info("api")
 	cmd := r.FormValue("cmd")
 	name := r.FormValue("name")
-	inst.dataDir = r.FormValue("dir")
-	if util.CheckIsEmpty(cmd, name, inst.dataDir) {
+	if util.CheckIsEmpty(cmd, name) {
 		util.RespHTTPErr(w, http.StatusBadRequest, "")
 		return
 	}
@@ -89,8 +88,7 @@ func (inst *Instance) apiSet(w http.ResponseWriter, r *http.Request) {
 func (inst *Instance) apiRestart(w http.ResponseWriter, r *http.Request) {
 	cmd := r.FormValue("cmd")
 	name := r.FormValue("name")
-	inst.dataDir = r.FormValue("dir")
-	if util.CheckIsEmpty(cmd, name, inst.dataDir) {
+	if util.CheckIsEmpty(cmd, name) {
 		util.RespHTTPErr(w, http.StatusBadRequest, "")
 		return
 	}
@@ -133,32 +131,6 @@ func (inst *Instance) apiContinue(w http.ResponseWriter, r *http.Request) {
 
 	if err := ProbeResult(r.FormValue("probe")); err != nil {
 		util.RespHTTPErr(w, http.StatusInternalServerError, err.Error())
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-}
-
-func (inst *Instance) apiBackupData(w http.ResponseWriter, r *http.Request) {
-	dstPath := r.FormValue("dir")
-	if util.CheckIsEmpty(dstPath) {
-		util.RespHTTPErr(w, http.StatusBadRequest, "")
-		return
-	}
-
-	if err := inst.BackupData(dstPath); err != nil {
-		util.RespHTTPErr(w, http.StatusInternalServerError,
-			fmt.Sprintf("backup instance data failed, err - %v", err))
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-}
-
-func (inst *Instance) apiCleanUpData(w http.ResponseWriter, r *http.Request) {
-	if err := inst.CleanUpData(); err != nil {
-		util.RespHTTPErr(w, http.StatusInternalServerError,
-			fmt.Sprintf("clean up instance data failed, err - %v", err))
 		return
 	}
 
@@ -261,11 +233,36 @@ func (inst *Instance) apiRecoverPort(w http.ResponseWriter, r *http.Request) {
 		util.RespHTTPErr(w, http.StatusInternalServerError,
 			fmt.Sprintf("recover instance port failed, err - %v", err))
 		return
-		return
 	}
 
 	if err := ProbeResult(r.FormValue("probe")); err != nil {
 		util.RespHTTPErr(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func (a *Agent) apiBackupData(w http.ResponseWriter, r *http.Request) {
+	dstPath := r.FormValue("dir")
+	if util.CheckIsEmpty(dstPath) {
+		util.RespHTTPErr(w, http.StatusBadRequest, "")
+		return
+	}
+
+	if err := a.BackupData(dstPath); err != nil {
+		util.RespHTTPErr(w, http.StatusInternalServerError,
+			fmt.Sprintf("backup instance data failed, err - %v", err))
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func (a *Agent) apiCleanupData(w http.ResponseWriter, r *http.Request) {
+	if err := a.CleanupData(); err != nil {
+		util.RespHTTPErr(w, http.StatusInternalServerError,
+			fmt.Sprintf("clean up instance data failed, err - %v", err))
 		return
 	}
 

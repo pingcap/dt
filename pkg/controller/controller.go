@@ -170,11 +170,6 @@ func (ctrl *Controller) HandleFailure() error {
 		instances = append(instances, name)
 	}
 
-	cleanCmd := &TestCmd{Name: util.TestCmdCleanUpData, Instances: instances}
-	if err := ctrl.HandleCmd(cleanCmd); err != nil {
-		return errors.Trace(err)
-	}
-
 	// TODO: restart all instance
 	//	restartCmd := &TestCmd{Name: util.TestCmdRestart, Args, Probe, Instances: instances}
 	//	if err := ctrl.HandleCmd(restartCmd); err != nil {
@@ -216,11 +211,11 @@ func DoCmd(cmd *TestCmd, agent *client.Agent, inst string) error {
 
 	switch strings.ToLower(cmd.Name) {
 	case util.TestCmdStart:
-		err = agent.StartInstance(cmd.Args, inst, cmd.Dir, cmd.Probe)
+		err = agent.StartInstance(cmd.Args, inst, cmd.Probe)
 	case util.TestCmdInit:
 		err = agent.SetInstance(cmd.Args, cmd.Probe)
 	case util.TestCmdRestart:
-		err = agent.RestartInstance(cmd.Args, inst, cmd.Dir, cmd.Probe)
+		err = agent.RestartInstance(cmd.Args, inst, cmd.Probe)
 	case util.TestCmdPause:
 		err = agent.PauseInstance(cmd.Probe)
 	case util.TestCmdContinue:
@@ -249,8 +244,8 @@ func DoCmd(cmd *TestCmd, agent *client.Agent, inst string) error {
 		err = agent.Shutdown()
 	case util.TestCmdBackupData:
 		err = agent.BackupInstanceData(cmd.Dir)
-	case util.TestCmdCleanUpData:
-		err = agent.CleanUpInstanceData()
+	case util.TestCmdCleanupData:
+		err = agent.CleanupInstanceData()
 	case util.TestCmdSleep:
 		t, err := strconv.Atoi(cmd.Args)
 		if err != nil {
