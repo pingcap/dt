@@ -129,7 +129,6 @@ func getValue(r *http.Request, key, defaultVal string) string {
 }
 
 func probeStart(w http.ResponseWriter, r *http.Request) {
-	time.Sleep(5 * time.Second)
 	ret := getValue(r, "result", "pass")
 
 	if err := putProbe(0, ret, "start", 5); err != nil {
@@ -165,7 +164,6 @@ func probeDrop(w http.ResponseWriter, r *http.Request) {
 
 func probeRecoverPort(w http.ResponseWriter, r *http.Request) {
 	log.Debug("start: probe recover port")
-	time.Sleep(5 * time.Second)
 	ret := getValue(r, "result", "pass")
 
 	if err := putProbe(0, ret, "recoverport", -1); err != nil {
@@ -200,7 +198,6 @@ func probePause(w http.ResponseWriter, r *http.Request) {
 
 func probeContinue(w http.ResponseWriter, r *http.Request) {
 	log.Debug("start: probe continue")
-	time.Sleep(3 * time.Second)
 	ret := getValue(r, "result", "pass")
 	currKey := getCurrentKey()
 
@@ -225,7 +222,6 @@ func probeContinue(w http.ResponseWriter, r *http.Request) {
 
 func probeRestart(w http.ResponseWriter, r *http.Request) {
 	log.Debug("start: probe restart")
-	time.Sleep(25 * time.Second)
 	ret := getValue(r, "result", "pass")
 
 	if err := putProbe(0, ret, "restart", -1); err != nil {
