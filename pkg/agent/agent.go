@@ -92,8 +92,8 @@ func (a *Agent) Start() error {
 }
 
 func (a *Agent) BackupData(path string) error {
-	arg := fmt.Sprintf("%s %s %s", backupInstanceDataCmd, a.DataDir, path)
-	if _, err := util.ExecCmd(arg, a.inst.logfile); err != nil {
+	args := fmt.Sprintf("%s %s %s", backupInstanceDataCmd, a.DataDir, path)
+	if _, err := util.ExecCmd(args, a.inst.logfile); err != nil {
 		return errors.Trace(err)
 	}
 
@@ -101,8 +101,8 @@ func (a *Agent) BackupData(path string) error {
 }
 
 func (a *Agent) CleanupData() error {
-	arg := fmt.Sprintf("%s %s", cleanUpInstanceDataCmd, a.DataDir)
-	if _, err := util.ExecCmd(arg, a.inst.logfile); err != nil {
+	args := fmt.Sprintf("%s %s", cleanUpInstanceDataCmd, a.DataDir)
+	if _, err := util.ExecCmd(args, a.inst.logfile); err != nil {
 		return errors.Trace(err)
 	}
 
